@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Menu, Bell, Settings, Sun, Moon, ChevronDown } from "lucide-react";
 import { logout } from "../utils/auth";
+import { useNavigate } from "react-router-dom";
+
 
 const Header = ({ onToggle, onMobileMenu }) => {
   const [darkMode, setDarkMode] = useState(
@@ -11,6 +13,8 @@ const Header = ({ onToggle, onMobileMenu }) => {
 
   const notifRef = useRef(null);
   const profileRef = useRef(null);
+
+  const navigate = useNavigate();
 
   /* ---------- APPLY DARK MODE ---------- */
   useEffect(() => {
@@ -169,7 +173,7 @@ const Header = ({ onToggle, onMobileMenu }) => {
 
             {profileOpen && (
               <div className="fixed right-6 top-20 w-48 bg-white dark:bg-slate-900 border dark:border-slate-700 rounded-xl shadow-xl p-2 z-[99999]">
-                <button className="w-full text-left px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-800 dark:text-white">
+                <button className="w-full text-left px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-800 dark:text-white" onClick={() => navigate("/profile")}>
                   Your Profile
                 </button>
 

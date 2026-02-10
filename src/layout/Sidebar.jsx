@@ -7,6 +7,10 @@ import {
   Users as UsersIcon,
   ChevronDown,
   ChevronUp,
+  ChartBarStacked,
+  TicketPercent,
+  LogOut,
+  Image
 } from "lucide-react";
 
 const menuItems = [
@@ -15,7 +19,6 @@ const menuItems = [
     icon: LayoutDashboard,
     label: "Dashboard",
     path: "/dashboard",
-    badge: "New",
   },
   {
     id: "users",
@@ -37,16 +40,25 @@ const menuItems = [
   },
   {
     id: "categories",
-    icon: UsersIcon,
+    icon: ChartBarStacked ,
     label: "Categories",
     subMenu: [
       { id: "all-categories", label: "All Categories", path: "/categories" },
       { id: "add-category", label: "Add Category", path: "/add-category" },
     ],
   },
+   {
+    id: "sub-categories",
+    icon: ChartBarStacked ,
+    label: "Sub Categories",
+    subMenu: [
+      { id: "all-sub-categories", label: "All Sub Categories", path: "/sub-categories" },
+      { id: "add-sub-category", label: "Add Sub Category", path: "/add-sub-category" },
+    ],
+  },
   {
     id: "offers",
-    icon: UsersIcon,
+    icon: TicketPercent ,
     label: "Offers",
     subMenu: [
       { id: "all-offers", label: "All Offers", path: "/offers" },
@@ -54,12 +66,21 @@ const menuItems = [
     ],
   },
   {
+    id: "slider",
+    icon: Image ,
+    label: "Slider",
+    subMenu: [
+      { id: "all-slider", label: "All Slider", path: "/slider" },
+      { id: "add-slider", label: "Add Slider", path: "/add-slider" },
+    ],
+  },
+  {
     id: "logout",
-    icon: LayoutDashboard,
+    icon: LogOut,
     label: "Logout",
     action: "logout",
+    subMenu: null,
   },
-  // Add more menus here if needed
 ];
 
 function Sidebar({ collapsed, mobileOpen, setMobileOpen }) {
@@ -91,14 +112,12 @@ function Sidebar({ collapsed, mobileOpen, setMobileOpen }) {
   const handleMenuClick = (item) => {
     closeMobile();
 
-    // 🔴 Logout action
     if (item.action === "logout") {
       logout();
       return;
     }
 
     if (item.path) {
-      // Top-level menu clicked → collapse all submenus
       setExpandedItems(new Set());
     } else if (item.subMenu) {
       toggleExpanded(item.id);
@@ -194,12 +213,13 @@ function Sidebar({ collapsed, mobileOpen, setMobileOpen }) {
                       <Icon className="w-5 h-5" />
                       {!collapsed && <span>{item.label}</span>}
                     </div>
-                    {!collapsed &&
-                      (isOpen ? (
+                    {!collapsed && item.subMenu && (
+                      isOpen ? (
                         <ChevronUp className="w-4 h-4" />
                       ) : (
                         <ChevronDown className="w-4 h-4" />
-                      ))}
+                      )
+                    )}
                   </button>
                 )}
 

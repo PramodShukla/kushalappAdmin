@@ -1,34 +1,49 @@
-import React, { useState } from "react";
-import { Upload } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Upload, Save } from "lucide-react";
 import ConfirmModal from "../../components/common/ConfirmModal";
 
-const AddOffer = () => {
-  // -------- STATE --------
+const AddSlider = () => {
+  /* -------- STATE -------- */
   const [title, setTitle] = useState("");
   const [intro, setIntro] = useState("");
   const [description, setDescription] = useState("");
-  const [offerMode, setOfferMode] = useState("");
-  const [displayType, setDisplayType] = useState("horizontal");
-  const [offerType, setOfferType] = useState("category");
+  const [displayType, setDisplayType] = useState("");
   const [sequence, setSequence] = useState("");
 
   const [imagePreview, setImagePreview] = useState(null);
   const [imageFile, setImageFile] = useState(null);
 
+  const [loading, setLoading] = useState(true);
   const [openSaveModal, setOpenSaveModal] = useState(false);
 
-  // -------- IMAGE --------
+  /* -------- LOADING -------- */
+  useEffect(() => {
+    const t = setTimeout(() => setLoading(false), 700);
+    return () => clearTimeout(t);
+  }, []);
+
+  /* -------- IMAGE -------- */
   const handleImage = (e) => {
     const file = e.target.files[0];
     if (!file) return;
+
+    if (!["image/png", "image/jpeg", "image/jpg", "image/webp"].includes(file.type)) {
+      alert("Only PNG/JPG/WEBP allowed");
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      alert("Max size 2MB");
+      return;
+    }
 
     setImageFile(file);
     setImagePreview(URL.createObjectURL(file));
   };
 
-  // -------- SAVE --------
+  /* -------- SAVE -------- */
   const handleSaveConfirm = () => {
-    if (!title || !intro || !sequence) {
+    if (!title || !intro || !displayType || !sequence) {
       alert("Please fill required fields");
       return;
     }
@@ -37,28 +52,42 @@ const AddOffer = () => {
     formData.append("title", title);
     formData.append("intro", intro);
     formData.append("description", description);
-    formData.append("offerMode", offerMode);
     formData.append("displayType", displayType);
-    formData.append("offerType", offerType);
     formData.append("sequence", sequence);
     if (imageFile) formData.append("image", imageFile);
 
-    console.log("Offer FormData:", formData);
+    console.log("Slider FormData:", [...formData.entries()]);
+
     setOpenSaveModal(false);
-    alert("Offer saved!");
+    alert("Slider added successfully!");
   };
 
-  // -------- UI --------
+  /* -------- SKELETON -------- */
+  const Skeleton = () => (
+    <div className="p-6 animate-pulse space-y-4">
+      <div className="h-8 w-1/3 bg-gray-300 rounded" />
+      <div className="grid md:grid-cols-2 gap-6">
+        {[...Array(6)].map((_, i) => (
+          <div key={i} className="h-12 bg-gray-300 rounded" />
+        ))}
+      </div>
+    </div>
+  );
+
+  if (loading) return <Skeleton />;
+
+  /* -------- UI -------- */
+
   return (
     <div className="p-6 space-y-6">
 
       {/* HEADER */}
       <div>
         <h1 className="text-2xl font-bold dark:text-white">
-          Add Offer
+          Add Slider
         </h1>
         <p className="text-sm text-gray-500 dark:text-gray-400">
-          Create and register a new offer
+          Create and register a new slider
         </p>
       </div>
 
@@ -76,7 +105,7 @@ const AddOffer = () => {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className="w-full px-4 py-2 rounded-lg border bg-gray-50 dark:bg-slate-800"
-              placeholder="Enter title"
+              placeholder="Enter slider title"
             />
           </div>
 
@@ -94,8 +123,24 @@ const AddOffer = () => {
             />
           </div>
 
+          {/* DISPLAY TYPE */}
+          <div>
+            <label className="text-sm font-medium mb-2 block">
+              Display Type
+            </label>
+            <select
+              value={displayType}
+              onChange={(e) => setDisplayType(e.target.value)}
+              className="w-full px-4 py-2 rounded-lg border bg-gray-50 dark:bg-slate-800"
+            >
+              <option value="">Select display type</option>
+              <option value="Horizontal">Horizontal</option>
+              <option value="Vertical">Vertical</option>
+            </select>
+          </div>
+
           {/* INTRO */}
-          <div className="md:col-span-2">
+          <div >
             <label className="text-sm font-medium mb-2 block">
               Intro
             </label>
@@ -121,54 +166,10 @@ const AddOffer = () => {
             />
           </div>
 
-          {/* OFFER MODE */}
-          <div>
-            <label className="text-sm font-medium mb-2 block">
-              Offer Mode
-            </label>
-            <input
-              value={offerMode}
-              onChange={(e) => setOfferMode(e.target.value)}
-              className="w-full px-4 py-2 rounded-lg border bg-gray-50 dark:bg-slate-800"
-              placeholder="Online / Offline"
-            />
-          </div>
-
-          {/* DISPLAY TYPE */}
-          <div>
-            <label className="text-sm font-medium mb-2 block">
-              Display Type
-            </label>
-            <select
-              value={displayType}
-              onChange={(e) => setDisplayType(e.target.value)}
-              className="w-full px-4 py-2 rounded-lg border bg-gray-50 dark:bg-slate-800"
-            >
-              <option value="horizontal">Horizontal</option>
-              <option value="vertical">Vertical</option>
-            </select>
-          </div>
-
-          {/* OFFER TYPE */}
-          <div>
-            <label className="text-sm font-medium mb-2 block">
-              Offer Type
-            </label>
-            <select
-              value={offerType}
-              onChange={(e) => setOfferType(e.target.value)}
-              className="w-full px-4 py-2 rounded-lg border bg-gray-50 dark:bg-slate-800"
-            >
-              <option value="category">Category</option>
-              <option value="subcategory">Sub Category</option>
-              <option value="provider">Service Provider</option>
-            </select>
-          </div>
-
           {/* IMAGE */}
-          <div>
+          <div className="md:col-span-2">
             <label className="text-sm font-medium mb-2 block">
-              Offer Image
+              Slider Image
             </label>
 
             <label className="flex items-center gap-3 px-4 py-3 rounded-lg border-2 border-dashed cursor-pointer">
@@ -181,7 +182,7 @@ const AddOffer = () => {
               <img
                 src={imagePreview}
                 alt="preview"
-                className="mt-3 w-32 h-20 rounded-lg object-cover"
+                className="mt-3 w-40 h-24 object-cover rounded-lg"
               />
             )}
           </div>
@@ -190,6 +191,7 @@ const AddOffer = () => {
 
         {/* BUTTONS */}
         <div className="flex justify-end gap-3 mt-8">
+
           <button
             onClick={() => window.history.back()}
             className="px-5 py-2 rounded-lg bg-gray-200 dark:bg-slate-700"
@@ -201,23 +203,26 @@ const AddOffer = () => {
             onClick={() => setOpenSaveModal(true)}
             className="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white"
           >
-            Save Offer
+            Save Slider
           </button>
+
         </div>
 
       </div>
 
-      {/* MODAL */}
+      {/* CONFIRM MODAL */}
       <ConfirmModal
         open={openSaveModal}
         onClose={() => setOpenSaveModal(false)}
         onConfirm={handleSaveConfirm}
-        title="Save Offer"
-        message="Do you want to save this offer?"
+        title="Save Slider"
+        message="Do you want to save this slider?"
         type="success"
+        icon={<Save className="w-10 h-10 text-green-500" />}
       />
+
     </div>
   );
 };
 
-export default AddOffer;
+export default AddSlider;

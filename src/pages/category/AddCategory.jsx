@@ -1,172 +1,302 @@
-import React, { useState } from "react";
-import { Upload } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Upload, Save, Loader2 } from "lucide-react";
+import toast from "react-hot-toast";
+import ConfirmModal from "../../components/common/ConfirmModal";
+import { createCategory } from "../../services/categoryApi";
 
-const AddUser = () => {
-  const [preview, setPreview] = useState(null);
+const AddCategory = () => {
+  // ---------------- STATE ----------------
+  const [form, setForm] = useState({
+    name: "",
+    intro: "",
+    description: "",
+    sequence: "",
+  });
 
-  const handleImage = (e) => {
+  const [bannerPreview, setBannerPreview] = useState(null);
+  const [bannerFile, setBannerFile] = useState(null);
+
+  const [iconPreview, setIconPreview] = useState(null);
+  const [iconFile, setIconFile] = useState(null);
+
+  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [openSaveModal, setOpenSaveModal] = useState(false);
+
+  // ---------------- LOADING ----------------
+  useEffect(() => {
+    const timer = setTimeout(() => setLoading(false), 700);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Clean object URLs
+  useEffect(() => {
+    return () => {
+      if (bannerPreview) URL.revokeObjectURL(bannerPreview);
+      if (iconPreview) URL.revokeObjectURL(iconPreview);
+    };
+  }, [bannerPreview, iconPreview]);
+
+  // ---------------- INPUT ----------------
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+    setErrors({ ...errors, [e.target.name]: "" });
+  };
+
+  // ---------------- IMAGE HANDLER ----------------
+  const handleImage = (e, type) => {
     const file = e.target.files[0];
-    if (file) {
-      setPreview(URL.createObjectURL(file));
+    if (!file) return;
+
+    const allowedTypes = ["image/png", "image/jpeg", "image/jpg"];
+
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Only PNG, JPG, JPEG allowed");
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Image must be less than 2MB");
+      return;
+    }
+
+    const url = URL.createObjectURL(file);
+
+    if (type === "banner") {
+      setBannerFile(file);
+      setBannerPreview(url);
+    } else {
+      setIconFile(file);
+      setIconPreview(url);
     }
   };
 
-  return (
-    <div className=" p-6 space-y-6">
+  // ---------------- VALIDATION ----------------
+  const validate = () => {
+    let err = {};
 
-      {/* HEADER */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          Add New User
-        </h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
-          Create and register a new user account
+    if (!form.name) err.name = "Name is required";
+    if (!form.intro) err.intro = "Intro is required";
+    if (!form.description) err.description = "Description is required";
+    if (!form.sequence) err.sequence = "Sequence is required";
+
+    setErrors(err);
+    return Object.keys(err).length === 0;
+  };
+
+  // ---------------- SAVE ----------------
+  const handleSaveConfirm = async () => {
+    if (!validate()) {
+      toast.error("Please fill all required fields");
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("name", form.name);
+      formData.append("intro", form.intro);
+      formData.append("description", form.description);
+      formData.append("sequence", form.sequence);
+
+      if (bannerFile) formData.append("banner", bannerFile);
+      if (iconFile) formData.append("icon", iconFile);
+
+      await createCategory(formData);
+
+      toast.success("Category created successfully");
+
+      // Reset form
+      setForm({
+        name: "",
+        intro: "",
+        description: "",
+        sequence: "",
+      });
+      setBannerFile(null);
+      setIconFile(null);
+      setBannerPreview(null);
+      setIconPreview(null);
+
+      setOpenSaveModal(false);
+    } catch (error) {
+      console.error(error);
+      toast.error(
+        error?.response?.data?.message || "Failed to create category",
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // ---------------- SKELETON ----------------
+  if (loading) {
+    return (
+      <div className="p-8 animate-pulse">
+        <div className="h-8 bg-gray-300 rounded w-1/3 mb-6"></div>
+        <div className="grid md:grid-cols-2 gap-6">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="h-12 bg-gray-300 rounded"></div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // ---------------- UI ----------------
+  return (
+    <div className="p-8 min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-slate-800">
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold dark:text-white">Add Category</h1>
+        <p className="text-gray-600 dark:text-gray-300 mt-2">
+          Create new category details
         </p>
       </div>
 
-      {/* CARD */}
-      <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-2xl shadow-sm p-6">
-
+      {/* Card */}
+      <div className="bg-white/80 dark:bg-slate-900/70 backdrop-blur-md border rounded-3xl shadow-xl p-6">
         <div className="grid md:grid-cols-2 gap-6">
-
-          {/* NAME */}
+          {/* Name */}
           <div>
-            <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-              Full Name
-            </label>
+            <label className="text-sm font-semibold">Name</label>
             <input
-              type="text"
-              placeholder="Enter full name"
-              className="w-full px-4 py-2 rounded-lg
-                         bg-gray-50 dark:bg-slate-800
-                         border border-gray-200 dark:border-slate-700
-                         text-gray-800 dark:text-white outline-none
-                         focus:ring-2 focus:ring-blue-500"
+              name="name"
+              value={form.name}
+              onChange={handleChange}
+              className="w-full mt-2 px-4 py-3 rounded-xl bg-gray-50 dark:bg-slate-800 border"
+              placeholder="Enter name"
             />
+            {errors.name && (
+              <p className="text-red-500 text-sm">{errors.name}</p>
+            )}
           </div>
 
-          {/* EMAIL */}
+          {/* Sequence */}
           <div>
-            <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-              Email
-            </label>
+            <label className="text-sm font-semibold">Sequence</label>
             <input
-              type="email"
-              placeholder="Enter email"
-              className="w-full px-4 py-2 rounded-lg
-                         bg-gray-50 dark:bg-slate-800
-                         border border-gray-200 dark:border-slate-700
-                         text-gray-800 dark:text-white outline-none
-                         focus:ring-2 focus:ring-blue-500"
+              type="number"
+              name="sequence"
+              value={form.sequence}
+              onChange={handleChange}
+              className="w-full mt-2 px-4 py-3 rounded-xl bg-gray-50 dark:bg-slate-800 border"
+              placeholder="Enter sequence"
             />
+            {errors.sequence && (
+              <p className="text-red-500 text-sm">{errors.sequence}</p>
+            )}
           </div>
 
-          {/* PASSWORD */}
-          <div>
-            <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-              Password
-            </label>
+          {/* Intro */}
+          <div className="md:col-span-2">
+            <label className="text-sm font-semibold">Intro</label>
             <input
-              type="password"
-              placeholder="Enter password"
-              className="w-full px-4 py-2 rounded-lg
-                         bg-gray-50 dark:bg-slate-800
-                         border border-gray-200 dark:border-slate-700
-                         text-gray-800 dark:text-white outline-none
-                         focus:ring-2 focus:ring-blue-500"
+              name="intro"
+              value={form.intro}
+              onChange={handleChange}
+              className="w-full mt-2 px-4 py-3 rounded-xl bg-gray-50 dark:bg-slate-800 border"
             />
+            {errors.intro && (
+              <p className="text-red-500 text-sm">{errors.intro}</p>
+            )}
           </div>
 
-          {/* ROLE */}
-          <div>
-            <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-              Role
-            </label>
-            <select
-              className="w-full px-4 py-2 rounded-lg
-                         bg-gray-50 dark:bg-slate-800
-                         border border-gray-200 dark:border-slate-700
-                         text-gray-800 dark:text-white outline-none"
-            >
-              <option>Admin</option>
-              <option>Editor</option>
-              <option>User</option>
-            </select>
+          {/* Description */}
+          <div className="md:col-span-2">
+            <label className="text-sm font-semibold">Description</label>
+            <textarea
+              rows={4}
+              name="description"
+              value={form.description}
+              onChange={handleChange}
+              className="w-full mt-2 px-4 py-3 rounded-xl bg-gray-50 dark:bg-slate-800 border"
+            />
+            {errors.description && (
+              <p className="text-red-500 text-sm">{errors.description}</p>
+            )}
           </div>
 
-          {/* STATUS */}
+          {/* Banner */}
           <div>
-            <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-              Status
-            </label>
-            <select
-              className="w-full px-4 py-2 rounded-lg
-                         bg-gray-50 dark:bg-slate-800
-                         border border-gray-200 dark:border-slate-700
-                         text-gray-800 dark:text-white outline-none"
-            >
-              <option>Active</option>
-              <option>Inactive</option>
-            </select>
-          </div>
-
-          {/* IMAGE UPLOAD */}
-          <div>
-            <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-              Profile Image
+            <label className="text-sm font-semibold">Banner Image</label>
+            <label className="flex items-center gap-2 mt-2 px-4 py-4 border-2 border-dashed rounded-xl cursor-pointer hover:bg-gray-50">
+              <Upload size={18} /> Upload Banner
+              <input
+                hidden
+                type="file"
+                onChange={(e) => handleImage(e, "banner")}
+              />
             </label>
 
-           <label
-  className="flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer
-             bg-gray-50 dark:bg-slate-800
-             border border-dashed border-gray-300 dark:border-slate-600
-             hover:bg-gray-100 dark:hover:bg-slate-700 transition"
->
-  <Upload size={18} className="text-gray-700 dark:text-white" />
-
-  <span className="text-sm text-gray-700 dark:text-gray-300">
-    Upload image
-  </span>
-
-  <input
-    type="file"
-    hidden
-    onChange={handleImage}
-  />
-</label>
-
-            {preview && (
+            {bannerPreview && (
               <img
-                src={preview}
-                alt="preview"
-                className="mt-3 w-20 h-20 rounded-full object-cover ring-2 ring-blue-500"
+                src={bannerPreview}
+                alt="banner"
+                className="mt-3 w-48 h-28 object-cover rounded-lg shadow"
               />
             )}
           </div>
 
+          {/* Icon */}
+          <div>
+            <label className="text-sm font-semibold">Icon Image</label>
+            <label className="flex items-center gap-2 mt-2 px-4 py-4 border-2 border-dashed rounded-xl cursor-pointer hover:bg-gray-50">
+              <Upload size={18} /> Upload Icon
+              <input
+                hidden
+                type="file"
+                onChange={(e) => handleImage(e, "icon")}
+              />
+            </label>
+
+            {iconPreview && (
+              <img
+                src={iconPreview}
+                alt="icon"
+                className="mt-3 w-20 h-20 object-cover rounded-lg shadow"
+              />
+            )}
+          </div>
         </div>
 
-        {/* ACTION BUTTONS */}
-        <div className="flex justify-end gap-3 mt-8">
-
-          <button className="px-5 py-2 rounded-lg
-                             bg-gray-200 dark:bg-slate-700
-                             text-gray-700 dark:text-white
-                             hover:opacity-80">
+        {/* Buttons */}
+        <div className="flex justify-end gap-4 mt-8">
+          <button
+            onClick={() => window.history.back()}
+            className="px-6 py-3 rounded-xl bg-gray-200 dark:bg-slate-700"
+          >
             Cancel
           </button>
 
-          <button className="px-5 py-2 rounded-lg
-                             bg-blue-600 hover:bg-blue-700
-                             text-white font-medium">
-            Save User
+          <button
+            disabled={submitting}
+            onClick={() => setOpenSaveModal(true)}
+            className="px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow flex items-center gap-2 disabled:opacity-60"
+          >
+            {submitting ? (
+              <Loader2 className="animate-spin" size={18} />
+            ) : (
+              <Save size={18} />
+            )}
+            Save Category
           </button>
-
         </div>
-
       </div>
+
+      {/* Confirm Modal */}
+      <ConfirmModal
+        open={openSaveModal}
+        onClose={() => setOpenSaveModal(false)}
+        onConfirm={handleSaveConfirm}
+        title="Save Category"
+        message="Do you want to save this category?"
+        type="success"
+      />
     </div>
   );
 };
 
-export default AddUser;
+export default AddCategory;

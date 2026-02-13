@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { Upload, Save, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 import ConfirmModal from "../../components/common/ConfirmModal";
 import { createCategory } from "../../services/categoryApi";
 
 const AddCategory = () => {
+  const navigate = useNavigate();
+
   // ---------------- STATE ----------------
   const [form, setForm] = useState({
     name: "",
@@ -26,11 +29,11 @@ const AddCategory = () => {
 
   // ---------------- LOADING ----------------
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 700);
+    const timer = setTimeout(() => setLoading(false), 500);
     return () => clearTimeout(timer);
   }, []);
 
-  // Clean object URLs
+  // Clean preview URLs
   useEffect(() => {
     return () => {
       if (bannerPreview) URL.revokeObjectURL(bannerPreview);
@@ -89,6 +92,7 @@ const AddCategory = () => {
   const handleSaveConfirm = async () => {
     if (!validate()) {
       toast.error("Please fill all required fields");
+      setOpenSaveModal(false);
       return;
     }
 
@@ -99,32 +103,26 @@ const AddCategory = () => {
       formData.append("name", form.name);
       formData.append("intro", form.intro);
       formData.append("description", form.description);
-      formData.append("sequence", form.sequence);
+      formData.append("sequence", Number(form.sequence));
 
       if (bannerFile) formData.append("banner", bannerFile);
       if (iconFile) formData.append("icon", iconFile);
 
       await createCategory(formData);
 
-      toast.success("Category created successfully");
-
-      // Reset form
-      setForm({
-        name: "",
-        intro: "",
-        description: "",
-        sequence: "",
-      });
-      setBannerFile(null);
-      setIconFile(null);
-      setBannerPreview(null);
-      setIconPreview(null);
-
       setOpenSaveModal(false);
+
+      toast.success("Your category has been saved successfully");
+
+      // Redirect after success
+      setTimeout(() => {
+        navigate("/categories"); 
+      }, 1000);
+
     } catch (error) {
-      console.error(error);
+      setOpenSaveModal(false);
       toast.error(
-        error?.response?.data?.message || "Failed to create category",
+        error?.response?.data?.message || "Failed to create category"
       );
     } finally {
       setSubmitting(false);
@@ -159,15 +157,17 @@ const AddCategory = () => {
       {/* Card */}
       <div className="bg-white/80 dark:bg-slate-900/70 backdrop-blur-md border rounded-3xl shadow-xl p-6">
         <div className="grid md:grid-cols-2 gap-6">
+
           {/* Name */}
           <div>
-            <label className="text-sm font-semibold">Name</label>
+            <label className="text-sm font-semibold">
+              Name <span className="text-red-500">*</span>
+            </label>
             <input
               name="name"
               value={form.name}
               onChange={handleChange}
               className="w-full mt-2 px-4 py-3 rounded-xl bg-gray-50 dark:bg-slate-800 border"
-              placeholder="Enter name"
             />
             {errors.name && (
               <p className="text-red-500 text-sm">{errors.name}</p>
@@ -176,14 +176,16 @@ const AddCategory = () => {
 
           {/* Sequence */}
           <div>
-            <label className="text-sm font-semibold">Sequence</label>
+            <label className="text-sm font-semibold">
+              Sequence <span className="text-red-500">*</span>
+            </label>
             <input
               type="number"
               name="sequence"
+              min="1"
               value={form.sequence}
               onChange={handleChange}
               className="w-full mt-2 px-4 py-3 rounded-xl bg-gray-50 dark:bg-slate-800 border"
-              placeholder="Enter sequence"
             />
             {errors.sequence && (
               <p className="text-red-500 text-sm">{errors.sequence}</p>
@@ -192,7 +194,9 @@ const AddCategory = () => {
 
           {/* Intro */}
           <div className="md:col-span-2">
-            <label className="text-sm font-semibold">Intro</label>
+            <label className="text-sm font-semibold">
+              Intro <span className="text-red-500">*</span>
+            </label>
             <input
               name="intro"
               value={form.intro}
@@ -206,7 +210,9 @@ const AddCategory = () => {
 
           {/* Description */}
           <div className="md:col-span-2">
-            <label className="text-sm font-semibold">Description</label>
+            <label className="text-sm font-semibold">
+              Description <span className="text-red-500">*</span>
+            </label>
             <textarea
               rows={4}
               name="description"
@@ -222,15 +228,10 @@ const AddCategory = () => {
           {/* Banner */}
           <div>
             <label className="text-sm font-semibold">Banner Image</label>
-            <label className="flex items-center gap-2 mt-2 px-4 py-4 border-2 border-dashed rounded-xl cursor-pointer hover:bg-gray-50">
+            <label className="flex items-center gap-2 mt-2 px-4 py-4 border-2 border-dashed rounded-xl cursor-pointer">
               <Upload size={18} /> Upload Banner
-              <input
-                hidden
-                type="file"
-                onChange={(e) => handleImage(e, "banner")}
-              />
+              <input hidden type="file" onChange={(e) => handleImage(e, "banner")} />
             </label>
-
             {bannerPreview && (
               <img
                 src={bannerPreview}
@@ -243,15 +244,10 @@ const AddCategory = () => {
           {/* Icon */}
           <div>
             <label className="text-sm font-semibold">Icon Image</label>
-            <label className="flex items-center gap-2 mt-2 px-4 py-4 border-2 border-dashed rounded-xl cursor-pointer hover:bg-gray-50">
+            <label className="flex items-center gap-2 mt-2 px-4 py-4 border-2 border-dashed rounded-xl cursor-pointer">
               <Upload size={18} /> Upload Icon
-              <input
-                hidden
-                type="file"
-                onChange={(e) => handleImage(e, "icon")}
-              />
+              <input hidden type="file" onChange={(e) => handleImage(e, "icon")} />
             </label>
-
             {iconPreview && (
               <img
                 src={iconPreview}
@@ -265,7 +261,7 @@ const AddCategory = () => {
         {/* Buttons */}
         <div className="flex justify-end gap-4 mt-8">
           <button
-            onClick={() => window.history.back()}
+            onClick={() => navigate("/categories")}
             className="px-6 py-3 rounded-xl bg-gray-200 dark:bg-slate-700"
           >
             Cancel
@@ -274,7 +270,7 @@ const AddCategory = () => {
           <button
             disabled={submitting}
             onClick={() => setOpenSaveModal(true)}
-            className="px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow flex items-center gap-2 disabled:opacity-60"
+            className="px-6 py-3 rounded-xl bg-blue-600 text-white font-semibold shadow flex items-center gap-2"
           >
             {submitting ? (
               <Loader2 className="animate-spin" size={18} />

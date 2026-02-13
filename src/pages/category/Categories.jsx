@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Search, Plus, Eye, Edit, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast"; // ✅ Added
 import { getCategories, deleteCategory } from "../../services/categoryApi";
 import ConfirmModal from "../../components/common/ConfirmModal";
 
@@ -41,25 +42,16 @@ const Categories = () => {
       setLoading(true);
 
       const res = await getCategories();
-      console.log("CATEGORY API RAW:", res.data);
-
-      // ✅ your API returns array directly — keep this
       const list = Array.isArray(res?.data) ? res.data : [];
 
       const formatted = list.map((item, index) => {
-        // ✅ SAFE IMAGE BUILDER
         let imgUrl = "https://via.placeholder.com/80";
 
         if (item.icon) {
-          if (item.icon.startsWith("http")) {
-            imgUrl = item.icon; // already full URL
-          } else {
-            imgUrl = `${BASE_URL}${item.icon}`; // relative path
-          }
+          imgUrl = item.icon.startsWith("http")
+            ? item.icon
+            : `${BASE_URL}${item.icon}`;
         }
-
-        console.log("ICON:", item.icon);
-        console.log("FINAL IMG:", imgUrl);
 
         return {
           id: item._id || item.id,
@@ -77,6 +69,7 @@ const Categories = () => {
       setData(formatted);
     } catch (err) {
       console.error("Fetch categories error:", err);
+      toast.error("Failed to load categories");
     } finally {
       setLoading(false);
     }
@@ -96,10 +89,20 @@ const Categories = () => {
   const confirmDelete = async () => {
     try {
       await deleteCategory(deleteId);
+
       setOpenDelete(false);
+      setDeleteId(null);
+
+      toast.success("Category deleted successfully", {
+        icon: "🗑️",
+      });
+
       fetchCategories();
     } catch (err) {
       console.error("Delete failed:", err);
+      toast.error(
+        err?.response?.data?.message || "Failed to delete category"
+      );
     }
   };
 
@@ -162,7 +165,10 @@ const Categories = () => {
 
               {!loading &&
                 filtered.map((u) => (
-                  <tr key={u.id} className="hover:bg-gray-50 dark:hover:bg-slate-800">
+                  <tr
+                    key={u.id}
+                    className="hover:bg-gray-50 dark:hover:bg-slate-800"
+                  >
                     <td className="p-4">{u.sequence}</td>
 
                     <td className="p-4 flex items-center gap-3">
@@ -171,7 +177,6 @@ const Categories = () => {
                         alt={u.name}
                         className="w-10 h-10 rounded-lg object-cover bg-amber-100 p-2"
                         onError={(e) => {
-                          console.log("IMAGE FAILED:", u.image);
                           e.target.src = "https://via.placeholder.com/80";
                         }}
                       />

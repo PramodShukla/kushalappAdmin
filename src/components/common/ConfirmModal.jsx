@@ -62,7 +62,7 @@ const ConfirmModal = ({
             <button
               onClick={onClose}
               className="px-5 py-2.5 rounded-xl bg-gray-200 dark:bg-slate-700 
-                         hover:bg-gray-300 dark:hover:bg-slate-600 transition"
+                         hover:bg-gray-300 dark:hover:bg-slate-600 transition cursor-pointer"
             >
               Cancel
             </button>
@@ -70,7 +70,7 @@ const ConfirmModal = ({
             <button
               onClick={onConfirm}
               className={`px-5 py-2.5 rounded-xl text-white font-semibold shadow
-                          ${ui.btn} transition`}
+                          ${ui.btn} transition cursor-pointer`}
             >
               Confirm
             </button>

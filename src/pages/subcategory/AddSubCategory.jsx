@@ -1,9 +1,16 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Upload, Save } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import ConfirmModal from "../../components/common/ConfirmModal";
+import { createSubCategory } from "../../services/subcategoryapi";
+import { getCategories } from "../../services/categoryApi";
 
 const AddSubCategory = () => {
+  const navigate = useNavigate();
 
+  // -------- FORM STATE --------
+  const [category, setCategory] = useState("");
   const [name, setName] = useState("");
   const [intro, setIntro] = useState("");
   const [description, setDescription] = useState("");
@@ -15,19 +22,39 @@ const AddSubCategory = () => {
   const [iconFile, setIconFile] = useState(null);
   const [iconPreview, setIconPreview] = useState(null);
 
+  const [categories, setCategories] = useState([]);
+  const [errors, setErrors] = useState({});
   const [openSaveModal, setOpenSaveModal] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  // ---------- IMAGE VALIDATION ----------
+  // -------- LOAD CATEGORIES --------
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const res = await getCategories();
+        const list = Array.isArray(res?.data?.data)
+          ? res.data.data
+          : res.data;
+        setCategories(list || []);
+      } catch (err) {
+        console.error(err);
+        toast.error("Failed to load categories");
+      }
+    };
+    loadCategories();
+  }, []);
+
+  // -------- IMAGE VALIDATION --------
   const validateImage = (file) => {
     if (!file) return false;
 
     if (!["image/png", "image/jpeg", "image/jpg"].includes(file.type)) {
-      alert("Only PNG/JPG allowed");
+      toast.error("Only PNG, JPG or JPEG allowed");
       return false;
     }
 
     if (file.size > 2 * 1024 * 1024) {
-      alert("Max size 2MB");
+      toast.error("Image size must be less than 2MB");
       return false;
     }
 
@@ -37,7 +64,6 @@ const AddSubCategory = () => {
   const handleBanner = (e) => {
     const file = e.target.files[0];
     if (!validateImage(file)) return;
-
     setBannerFile(file);
     setBannerPreview(URL.createObjectURL(file));
   };
@@ -45,37 +71,72 @@ const AddSubCategory = () => {
   const handleIcon = (e) => {
     const file = e.target.files[0];
     if (!validateImage(file)) return;
-
     setIconFile(file);
     setIconPreview(URL.createObjectURL(file));
   };
 
-  // ---------- SAVE ----------
-  const handleSaveConfirm = () => {
-    if (!name || !intro || !sequence) {
-      alert("Name, Intro and Sequence are required");
+  // -------- VALIDATION --------
+  const validate = () => {
+    let err = {};
+
+    if (!category) err.category = "Category is required";
+    if (!name) err.name = "Name is required";
+    if (!intro) err.intro = "Intro is required";
+    if (!description) err.description = "Description is required";
+    if (!sequence) err.sequence = "Sequence is required";
+
+    setErrors(err);
+    return Object.keys(err).length === 0;
+  };
+
+  // -------- SAVE --------
+  const handleSaveConfirm = async () => {
+    if (!validate()) {
+      toast.error("Please fill all required fields");
+      setOpenSaveModal(false);
       return;
     }
 
-    const formData = new FormData();
-    formData.append("name", name);
-    formData.append("intro", intro);
-    formData.append("description", description);
-    formData.append("sequence", sequence);
-    if (bannerFile) formData.append("banner", bannerFile);
-    if (iconFile) formData.append("icon", iconFile);
+    setSubmitting(true);
 
-    console.log("Submitting:", Object.fromEntries(formData));
+    try {
+      const formData = new FormData();
+      formData.append("category", category);
+      formData.append("name", name);
+      formData.append("intro", intro);
+      formData.append("description", description);
+      formData.append("sequence", Number(sequence));
 
-    // 👉 call your API here
+      if (bannerFile) formData.append("banner", bannerFile);
+      if (iconFile) formData.append("icon", iconFile);
 
-    setOpenSaveModal(false);
-    alert("SubCategory saved!");
+      await createSubCategory(formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      setOpenSaveModal(false);
+
+      toast.success("SubCategory added successfully");
+
+      setTimeout(() => {
+        navigate("/sub-categories");
+      }, 800);
+    } catch (error) {
+      setOpenSaveModal(false);
+
+      console.error("Create error:", error.response);
+
+      toast.error(
+        error?.response?.data?.message ||
+        "Failed to create SubCategory"
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
     <div className="p-6 space-y-6">
-
       {/* HEADER */}
       <div>
         <h1 className="text-2xl font-bold">Add SubCategory</h1>
@@ -84,106 +145,150 @@ const AddSubCategory = () => {
         </p>
       </div>
 
-      {/* FORM CARD */}
+      {/* CARD */}
       <div className="bg-white border rounded-2xl shadow-sm p-6">
         <div className="grid md:grid-cols-2 gap-6">
 
-          {/* NAME */}
+          {/* CATEGORY */}
           <div>
-            <label className="text-sm font-medium mb-2 block">Name</label>
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+            <label className="block text-sm font-medium mb-2">
+              Category <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={category}
+              onChange={(e) => {
+                setCategory(e.target.value);
+                setErrors({ ...errors, category: "" });
+              }}
               className="w-full px-4 py-2 rounded-lg border bg-gray-50"
-              placeholder="Enter name"
-            />
+            >
+              <option value="">Select Category</option>
+              {categories.map((c) => (
+                <option key={c._id} value={c._id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+            {errors.category && (
+              <p className="text-red-500 text-sm">{errors.category}</p>
+            )}
           </div>
 
           {/* SEQUENCE */}
           <div>
-            <label className="text-sm font-medium mb-2 block">Sequence</label>
+            <label className="block text-sm font-medium mb-2">
+              Sequence <span className="text-red-500">*</span>
+            </label>
             <input
               type="number"
               value={sequence}
-              onChange={(e) => setSequence(e.target.value)}
+              onChange={(e) => {
+                setSequence(e.target.value);
+                setErrors({ ...errors, sequence: "" });
+              }}
               className="w-full px-4 py-2 rounded-lg border bg-gray-50"
-              placeholder="Order number"
             />
+            {errors.sequence && (
+              <p className="text-red-500 text-sm">{errors.sequence}</p>
+            )}
+          </div>
+
+          {/* NAME */}
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              Name <span className="text-red-500">*</span>
+            </label>
+            <input
+              value={name}
+              onChange={(e) => {
+                setName(e.target.value);
+                setErrors({ ...errors, name: "" });
+              }}
+              className="w-full px-4 py-2 rounded-lg border bg-gray-50"
+            />
+            {errors.name && (
+              <p className="text-red-500 text-sm">{errors.name}</p>
+            )}
           </div>
 
           {/* INTRO */}
-          <div className="md:col-span-2">
-            <label className="text-sm font-medium mb-2 block">Intro</label>
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              Intro <span className="text-red-500">*</span>
+            </label>
             <input
               value={intro}
-              onChange={(e) => setIntro(e.target.value)}
+              onChange={(e) => {
+                setIntro(e.target.value);
+                setErrors({ ...errors, intro: "" });
+              }}
               className="w-full px-4 py-2 rounded-lg border bg-gray-50"
-              placeholder="Short intro"
             />
+            {errors.intro && (
+              <p className="text-red-500 text-sm">{errors.intro}</p>
+            )}
           </div>
 
           {/* DESCRIPTION */}
           <div className="md:col-span-2">
-            <label className="text-sm font-medium mb-2 block">
-              Description
+            <label className="block text-sm font-medium mb-2">
+              Description <span className="text-red-500">*</span>
             </label>
             <textarea
               rows={4}
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={(e) => {
+                setDescription(e.target.value);
+                setErrors({ ...errors, description: "" });
+              }}
               className="w-full px-4 py-2 rounded-lg border bg-gray-50"
-              placeholder="Full description"
             />
+            {errors.description && (
+              <p className="text-red-500 text-sm">{errors.description}</p>
+            )}
           </div>
 
-          {/* BANNER IMAGE */}
+          {/* BANNER */}
           <div>
-            <label className="text-sm font-medium mb-2 block">
+            <label className="block text-sm font-medium mb-2">
               Banner Image
             </label>
-
             <label className="flex items-center gap-3 px-4 py-3 rounded-lg border-2 border-dashed cursor-pointer">
-              <Upload size={18} />
-              Upload banner
+              <Upload size={18} /> Upload banner
               <input hidden type="file" onChange={handleBanner} />
             </label>
-
             {bannerPreview && (
               <img
                 src={bannerPreview}
+                className="mt-3 w-40 h-24 rounded-lg object-cover"
                 alt="banner"
-                className="mt-3 w-40 h-24 object-cover rounded-lg"
               />
             )}
           </div>
 
-          {/* ICON IMAGE */}
+          {/* ICON */}
           <div>
-            <label className="text-sm font-medium mb-2 block">
+            <label className="block text-sm font-medium mb-2">
               Icon Image
             </label>
-
             <label className="flex items-center gap-3 px-4 py-3 rounded-lg border-2 border-dashed cursor-pointer">
-              <Upload size={18} />
-              Upload icon
+              <Upload size={18} /> Upload icon
               <input hidden type="file" onChange={handleIcon} />
             </label>
-
             {iconPreview && (
               <img
                 src={iconPreview}
+                className="mt-3 w-20 h-20 rounded-lg object-cover"
                 alt="icon"
-                className="mt-3 w-20 h-20 object-cover rounded-lg"
               />
             )}
           </div>
-
         </div>
 
-        {/* BUTTONS */}
+        {/* ACTIONS */}
         <div className="flex justify-end gap-3 mt-8">
           <button
-            onClick={() => window.history.back()}
+            onClick={() => navigate("/sub-categories")}
             className="px-5 py-2 rounded-lg bg-gray-200"
           >
             Cancel
@@ -191,7 +296,8 @@ const AddSubCategory = () => {
 
           <button
             onClick={() => setOpenSaveModal(true)}
-            className="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white"
+            disabled={submitting}
+            className="px-5 py-2 rounded-lg bg-blue-600 text-white"
           >
             Save SubCategory
           </button>

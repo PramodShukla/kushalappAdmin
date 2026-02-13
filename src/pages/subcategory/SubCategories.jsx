@@ -1,6 +1,8 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Search, Plus, Eye, Edit, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
+import ConfirmModal from "../../components/common/ConfirmModal";
 import {
   getSubCategories,
   deleteSubCategory,
@@ -35,19 +37,21 @@ const SubCategories = () => {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
 
+  // Delete modal state
+  const [deleteId, setDeleteId] = useState(null);
+  const [openDeleteModal, setOpenDeleteModal] = useState(false);
+
   /* ================= FETCH ================= */
   const fetchSubCategories = async () => {
     try {
       setLoading(true);
       const res = await getSubCategories();
 
-      console.log("API RAW:", res);
-
       const list = Array.isArray(res?.data?.data)
         ? res.data.data
         : Array.isArray(res?.data)
-          ? res.data
-          : [];
+        ? res.data
+        : [];
 
       const formatted = list.map((item, index) => ({
         id: safe(item._id),
@@ -55,22 +59,18 @@ const SubCategories = () => {
         sequence: item.sequence ?? index + 1,
         description: safe(item.description),
         categoryName: safe(item.category?.name),
-
-        // keep 0 — don't convert to "-"
         providers: item.providerCount === 0 ? 0 : safe(item.providerCount),
-
         status: item.isActive ?? true,
         createdAt: item.createdAt || null,
-
         image: item.banner
           ? `https://api.kushalapp.com${item.banner}`
           : "/images/categories/default.png",
       }));
 
-      console.log("FORMATTED:", formatted);
       setData(formatted);
     } catch (err) {
       console.error("FETCH ERROR:", err);
+      toast.error("Failed to load subcategories");
       setData([]);
     } finally {
       setLoading(false);
@@ -82,9 +82,25 @@ const SubCategories = () => {
   }, []);
 
   /* ================= DELETE ================= */
-  const handleDeleteClick = async (id) => {
-    await deleteSubCategory(id);
-    fetchSubCategories();
+  const handleDeleteClick = (id) => {
+    setDeleteId(id);
+    setOpenDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    try {
+      await deleteSubCategory(deleteId);
+      toast.success("SubCategory deleted successfully");
+      fetchSubCategories();
+    } catch (err) {
+      console.error(err);
+      toast.error(
+        err?.response?.data?.message || "Failed to delete SubCategory"
+      );
+    } finally {
+      setOpenDeleteModal(false);
+      setDeleteId(null);
+    }
   };
 
   /* ================= FILTER ================= */
@@ -187,42 +203,48 @@ const SubCategories = () => {
 
                   <td
                     className="p-4 text-blue-600 cursor-pointer"
-                    onClick={() => navigate(`/providers?subcategoryId=${u.id}`)}
+                    onClick={() =>
+                      navigate(`/providers?subcategoryId=${u.id}`)
+                    }
                   >
                     {u.providers}
                   </td>
 
                   <td className="p-4">
                     <span
-                      className={`px-3 py-1 text-xs rounded-full ${statusStyle(u.status)}`}
+                      className={`px-3 py-1 text-xs rounded-full ${statusStyle(
+                        u.status
+                      )}`}
                     >
                       {u.status ? "Active" : "Inactive"}
                     </span>
                   </td>
 
                   <td className="p-4 flex gap-3">
-                    <div className="flex justify-center gap-2">
-                      <button
-                        onClick={() => navigate(`/subcategory-details/${u.id}`)}
-                        className="w-8 h-8 rounded-full bg-blue-100 hover:bg-blue-200 flex items-center justify-center"
-                      >
-                        <Eye size={16} className="text-blue-600" />
-                      </button>
+                    <button
+                      onClick={() =>
+                        navigate(`/subcategory-details/${u.id}`)
+                      }
+                      className="w-8 h-8 rounded-full bg-blue-100 hover:bg-blue-200 flex items-center justify-center"
+                    >
+                      <Eye size={16} className="text-blue-600" />
+                    </button>
 
-                      <button
-                        onClick={() => navigate(`/edit-subcategory/${u.id}`)}
-                        className="w-8 h-8 rounded-full bg-yellow-100 hover:bg-yellow-200 flex items-center justify-center"
-                      >
-                        <Edit size={16} className="text-yellow-600" />
-                      </button>
+                    <button
+                      onClick={() =>
+                        navigate(`/edit-subcategory/${u.id}`)
+                      }
+                      className="w-8 h-8 rounded-full bg-yellow-100 hover:bg-yellow-200 flex items-center justify-center"
+                    >
+                      <Edit size={16} className="text-yellow-600" />
+                    </button>
 
-                      <button
-                        onClick={() => handleDeleteClick(u.id)}
-                        className="w-8 h-8 rounded-full bg-red-100 hover:bg-red-200 flex items-center justify-center"
-                      >
-                        <Trash2 size={16} className="text-red-600" />
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => handleDeleteClick(u.id)}
+                      className="w-8 h-8 rounded-full bg-red-100 hover:bg-red-200 flex items-center justify-center"
+                    >
+                      <Trash2 size={16} className="text-red-600" />
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -237,6 +259,16 @@ const SubCategories = () => {
           </tbody>
         </table>
       </div>
+
+      {/* DELETE CONFIRM MODAL */}
+      <ConfirmModal
+        open={openDeleteModal}
+        onClose={() => setOpenDeleteModal(false)}
+        onConfirm={confirmDelete}
+        title="Delete SubCategory"
+        message="Are you sure you want to delete this subcategory?"
+        type="danger"
+      />
     </div>
   );
 };

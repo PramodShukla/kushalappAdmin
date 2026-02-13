@@ -1,116 +1,180 @@
-import React from "react";
-import { ArrowLeft, Edit, Mail, User, Shield, Calendar } from "lucide-react";
-import BackButton from "../../Buttons/Backbutton";
-const UserDetails = () => {
-  const user = {
-    name: "Shristi Singh",
-    email: "shristi@email.com",
-    role: "Admin",
-    status: "Active",
-    joined: "2025-12-10",
-    lastLogin: "2026-02-02",
-    avatar:
-      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400",
-  };
+import React, { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { ArrowLeft, Edit } from "lucide-react";
+import toast from "react-hot-toast";
+import { getOffer } from "../../services/offersapi";
 
-  const statusStyle =
-    user.status === "Active"
-      ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
-      : "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300";
+const OfferDetail = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
 
+  const [offer, setOffer] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  // ---------------- FETCH OFFER ----------------
+  useEffect(() => {
+    const fetchOffer = async () => {
+      try {
+        const res = await getOffer(id);
+        setOffer(res.data);
+      } catch (error) {
+        toast.error("Failed to load offer");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOffer();
+  }, [id]);
+
+  // ---------------- SKELETON ----------------
+  if (loading) {
+    return (
+      <div className="p-8 animate-pulse">
+        <div className="h-8 bg-gray-300 rounded w-1/4 mb-6"></div>
+        <div className="grid lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-4 divide-y">
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="h-14 bg-gray-300 rounded-xl"></div>
+            ))}
+          </div>
+          <div className="space-y-4">
+            <div className="h-40 bg-gray-300 rounded-xl"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!offer) return null;
+
+  // ---------------- UI ----------------
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-6">
+    <div className="p-8 min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-slate-800">
+      
+      {/* Header */}
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-3xl font-bold dark:text-white">
+            Offer Details
+          </h1>
+          <p className="text-gray-600 dark:text-gray-300 mt-1">
+            View offer information
+          </p>
+        </div>
 
-      {/* TOP BAR */}
-      <div className="flex items-center justify-between">
-       <BackButton />
+        <div className="flex gap-3">
+          <button
+            onClick={() => navigate("/offers")}
+            className="px-4 py-2 rounded-xl bg-gray-200 dark:bg-slate-700 flex items-center gap-2 cursor-pointer"
+          >
+            <ArrowLeft size={18} />
+            Back
+          </button>
 
-        <button className="flex items-center gap-2 px-4 py-2 rounded-lg
-                           bg-blue-600 hover:bg-blue-700 text-white transition">
-          <Edit size={16} />
-          Edit User
-        </button>
+          <button
+            onClick={() => navigate(`/edit-offer/${id}`)}
+            className="px-4 py-2 rounded-xl bg-blue-600 text-white flex items-center gap-2 shadow cursor-pointer"
+          >
+            <Edit size={18} />
+            Edit
+          </button>
+        </div>
       </div>
 
-      {/* PROFILE CARD */}
-      <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-2xl shadow-sm p-6">
+      {/* Main Card */}
+      <div className="bg-white/80 dark:bg-slate-900/70 backdrop-blur-md border rounded-3xl shadow-xl p-6">
+        <div className="grid lg:grid-cols-3 gap-8">
 
-        <div className="flex flex-col md:flex-row gap-6 items-center md:items-start">
+          {/* LEFT: Details */}
+          <div className="lg:col-span-2 bg-gray-50 dark:bg-slate-800 rounded-2xl space-y-4 divide-y">
 
-          {/* AVATAR */}
-          <img
-            src={user.avatar}
-            alt=""
-            className="w-32 h-32 rounded-full object-cover ring-4 ring-blue-500/30"
-          />
+            {/* Title */}
+            <div className="grid grid-cols-3 gap-4 p-4 items-center">
+              <div className="text-sm font-semibold text-gray-500">Title</div>
+              <div className="col-span-2 dark:text-white">{offer.title || "-"}</div>
+            </div>
 
-          {/* BASIC INFO */}
-          <div className="space-y-3 text-center md:text-left">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-              {user.name}
-            </h1>
+            {/* Sequence */}
+            <div className="grid grid-cols-3 gap-4 p-4 items-center">
+              <div className="text-sm font-semibold text-gray-500">Sequence</div>
+              <div className="col-span-2 dark:text-white">{offer.sequence || "-"}</div>
+            </div>
 
-            <p className="text-gray-500 dark:text-gray-400 flex items-center gap-2 justify-center md:justify-start">
-              <Mail size={16} />
-              {user.email}
-            </p>
+            {/* Status */}
+            <div className="grid grid-cols-3 gap-4 p-4 items-center">
+              <div className="text-sm font-semibold text-gray-500">Status</div>
+              <div className="col-span-2">
+                <span
+                  className={`px-3 py-1 rounded-full text-sm font-medium ${
+                    offer.status === "Active"
+                      ? "bg-green-100 text-green-700"
+                      : "bg-red-100 text-red-700"
+                  }`}
+                >
+                  {offer.status || "Active"}
+                </span>
+              </div>
+            </div>
 
-            <div className="flex gap-3 justify-center md:justify-start">
-              <span className="px-3 py-1 text-sm rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
-                {user.role}
-              </span>
+            {/* Discount */}
+            <div className="grid grid-cols-3 gap-4 p-4 items-center">
+              <div className="text-sm font-semibold text-gray-500">Discount</div>
+              <div className="col-span-2 dark:text-white">{offer.discount || 0}%</div>
+            </div>
 
-              <span className={`px-3 py-1 text-sm rounded-full ${statusStyle}`}>
-                {user.status}
-              </span>
+            {/* Offer Mode */}
+            <div className="grid grid-cols-3 gap-4 p-4 items-center">
+              <div className="text-sm font-semibold text-gray-500">Offer Mode</div>
+              <div className="col-span-2 dark:text-white">{offer.offerMode || "-"}</div>
+            </div>
+
+            {/* Offer Type */}
+            <div className="grid grid-cols-3 gap-4 p-4 items-center">
+              <div className="text-sm font-semibold text-gray-500">Offer Type</div>
+              <div className="col-span-2 dark:text-white">{offer.offerType || "-"}</div>
+            </div>
+
+            {/* Display Type */}
+            <div className="grid grid-cols-3 gap-4 p-4 items-center">
+              <div className="text-sm font-semibold text-gray-500">Display Type</div>
+              <div className="col-span-2 dark:text-white">{offer.offerDisplayType || "-"}</div>
+            </div>
+
+            {/* Intro */}
+            <div className="grid grid-cols-3 gap-4 p-4 items-start">
+              <div className="text-sm font-semibold text-gray-500">Intro</div>
+              <div className="col-span-2 dark:text-white whitespace-pre-line">{offer.intro || "-"}</div>
+            </div>
+
+            {/* Description */}
+            <div className="grid grid-cols-3 gap-4 p-4 items-start">
+              <div className="text-sm font-semibold text-gray-500">Description</div>
+              <div className="col-span-2 dark:text-white whitespace-pre-line">{offer.description || "-"}</div>
+            </div>
+
+          </div>
+
+          {/* RIGHT: Image */}
+          <div className="space-y-6">
+            <div className="bg-gray-50 dark:bg-slate-800 p-4 rounded-2xl shadow-sm">
+              <p className="text-sm font-semibold text-gray-500 mb-3">Offer Image</p>
+              {offer.banner ? (
+                <img
+                  src={offer.banner}
+                  alt="offer"
+                  className="w-full h-40 object-cover rounded-xl"
+                />
+              ) : (
+                <p className="text-gray-400 text-sm">No image</p>
+              )}
             </div>
           </div>
 
         </div>
       </div>
-
-      {/* DETAILS GRID */}
-      <div className="grid md:grid-cols-2 gap-6">
-
-        {/* ACCOUNT INFO */}
-        <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl p-6 space-y-4">
-          <h2 className="font-semibold text-gray-900 dark:text-white">
-            Account Information
-          </h2>
-
-          <DetailRow icon={User} label="Full Name" value={user.name} />
-          <DetailRow icon={Mail} label="Email" value={user.email} />
-          <DetailRow icon={Shield} label="Role" value={user.role} />
-        </div>
-
-        {/* META INFO */}
-        <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl p-6 space-y-4">
-          <h2 className="font-semibold text-gray-900 dark:text-white">
-            Activity
-          </h2>
-
-          <DetailRow icon={Calendar} label="Joined Date" value={user.joined} />
-          <DetailRow icon={Calendar} label="Last Login" value={user.lastLogin} />
-          <DetailRow icon={Shield} label="Status" value={user.status} />
-        </div>
-
-      </div>
-
     </div>
   );
 };
 
-/* reusable row */
-const DetailRow = ({ icon: Icon, label, value }) => (
-  <div className="flex items-center justify-between text-sm">
-    <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
-      <Icon size={16} />
-      {label}
-    </div>
-    <div className="font-medium text-gray-900 dark:text-white">
-      {value}
-    </div>
-  </div>
-);
-
-export default UserDetails;
+export default OfferDetail;

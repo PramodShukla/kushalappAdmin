@@ -1,172 +1,315 @@
-import React, { useState } from "react";
-import { Upload } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { Upload, Save } from "lucide-react";
+import { useNavigate, useParams } from "react-router-dom";
+import toast from "react-hot-toast";
+import ConfirmModal from "../../components/common/ConfirmModal";
+import {
+  getSubCategory,
+  updateSubCategory,
+} from "../../services/subcategoryapi";
 
-const AddUser = () => {
-  const [preview, setPreview] = useState(null);
+const BASE_URL = "https://api.kushalapp.com";
 
-  const handleImage = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setPreview(URL.createObjectURL(file));
+const EditSubCategory = () => {
+  const navigate = useNavigate();
+  const { id } = useParams();
+
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+
+  const [name, setName] = useState("");
+  const [intro, setIntro] = useState("");
+  const [description, setDescription] = useState("");
+  const [sequence, setSequence] = useState("");
+
+  const [bannerFile, setBannerFile] = useState(null);
+  const [bannerPreview, setBannerPreview] = useState(null);
+
+  const [iconFile, setIconFile] = useState(null);
+  const [iconPreview, setIconPreview] = useState(null);
+
+  const [openSaveModal, setOpenSaveModal] = useState(false);
+
+  /* ================= FETCH DETAILS ================= */
+  const fetchDetails = async () => {
+    try {
+      setLoading(true);
+      const res = await getSubCategory(id);
+      const data = res?.data?.data || res?.data;
+
+      if (!data) {
+        toast.error("SubCategory not found");
+        navigate("/sub-categories");
+        return;
+      }
+
+      setName(data.name || "");
+      setIntro(data.intro || "");
+      setDescription(data.description || "");
+      setSequence(data.sequence || "");
+
+      if (data.banner) {
+        setBannerPreview(`${BASE_URL}${data.banner}`);
+      }
+
+      if (data.icon) {
+        setIconPreview(`${BASE_URL}${data.icon}`);
+      }
+    } catch (error) {
+      toast.error("Failed to load subcategory");
+    } finally {
+      setTimeout(() => setLoading(false), 400); // smooth skeleton
     }
   };
 
-  return (
-    <div className=" p-6 space-y-6">
+  useEffect(() => {
+    fetchDetails();
+  }, [id]);
 
+  /* ================= IMAGE ================= */
+  const validateImage = (file) => {
+    if (!file) return false;
+
+    if (!["image/png", "image/jpeg", "image/jpg"].includes(file.type)) {
+      toast.error("Only PNG/JPG allowed");
+      return false;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Max size 2MB");
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleBanner = (e) => {
+    const file = e.target.files[0];
+    if (!validateImage(file)) return;
+
+    setBannerFile(file);
+    setBannerPreview(URL.createObjectURL(file));
+  };
+
+  const handleIcon = (e) => {
+    const file = e.target.files[0];
+    if (!validateImage(file)) return;
+
+    setIconFile(file);
+    setIconPreview(URL.createObjectURL(file));
+  };
+
+  /* ================= VALIDATION ================= */
+  const validate = () => {
+    if (!name || !intro || !sequence) {
+      toast.error("Name, Intro and Sequence are required");
+      return false;
+    }
+    return true;
+  };
+
+  /* ================= UPDATE ================= */
+  const handleSaveConfirm = async () => {
+    if (!validate()) {
+      setOpenSaveModal(false);
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+
+      const formData = new FormData();
+      formData.append("name", name);
+      formData.append("intro", intro);
+      formData.append("description", description);
+      formData.append("sequence", Number(sequence));
+
+      if (bannerFile) formData.append("banner", bannerFile);
+      if (iconFile) formData.append("icon", iconFile);
+
+      await updateSubCategory(id, formData);
+
+      toast.success("SubCategory updated successfully");
+
+      setTimeout(() => {
+        navigate("/sub-categories");
+      }, 800);
+    } catch (error) {
+      toast.error(
+        error?.response?.data?.message || "Failed to update SubCategory"
+      );
+    } finally {
+      setSubmitting(false);
+      setOpenSaveModal(false);
+    }
+  };
+
+  /* ================= SKELETON ================= */
+  if (loading) {
+    return (
+      <div className="p-6 space-y-6 animate-pulse">
+        <div>
+          <div className="h-6 w-48 bg-gray-300 rounded mb-2"></div>
+          <div className="h-4 w-64 bg-gray-200 rounded"></div>
+        </div>
+
+        <div className="bg-white border rounded-2xl shadow-sm p-6">
+          <div className="grid md:grid-cols-2 gap-6">
+            {[...Array(6)].map((_, i) => (
+              <div key={i}>
+                <div className="h-4 w-24 bg-gray-300 rounded mb-2"></div>
+                <div className="h-10 w-full bg-gray-200 rounded"></div>
+              </div>
+            ))}
+
+            <div className="md:col-span-2">
+              <div className="h-4 w-32 bg-gray-300 rounded mb-2"></div>
+              <div className="h-24 w-full bg-gray-200 rounded"></div>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 mt-8">
+            <div className="h-10 w-24 bg-gray-300 rounded"></div>
+            <div className="h-10 w-32 bg-gray-300 rounded"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* ================= UI ================= */
+  return (
+    <div className="p-6 space-y-6">
       {/* HEADER */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          Add New User
-        </h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
-          Create and register a new user account
-        </p>
+        <h1 className="text-2xl font-bold">Edit SubCategory</h1>
+        <p className="text-sm text-gray-500">Update subcategory details</p>
       </div>
 
-      {/* CARD */}
-      <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-2xl shadow-sm p-6">
-
+      {/* FORM */}
+      <div className="bg-white border rounded-2xl shadow-sm p-6">
         <div className="grid md:grid-cols-2 gap-6">
 
-          {/* NAME */}
+          {/* Name */}
           <div>
-            <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-              Full Name
+            <label className="text-sm font-medium mb-2 block">
+              Name *
             </label>
             <input
-              type="text"
-              placeholder="Enter full name"
-              className="w-full px-4 py-2 rounded-lg
-                         bg-gray-50 dark:bg-slate-800
-                         border border-gray-200 dark:border-slate-700
-                         text-gray-800 dark:text-white outline-none
-                         focus:ring-2 focus:ring-blue-500"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full px-4 py-2 rounded-lg border bg-gray-50"
             />
           </div>
 
-          {/* EMAIL */}
+          {/* Sequence */}
           <div>
-            <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-              Email
+            <label className="text-sm font-medium mb-2 block">
+              Sequence *
             </label>
             <input
-              type="email"
-              placeholder="Enter email"
-              className="w-full px-4 py-2 rounded-lg
-                         bg-gray-50 dark:bg-slate-800
-                         border border-gray-200 dark:border-slate-700
-                         text-gray-800 dark:text-white outline-none
-                         focus:ring-2 focus:ring-blue-500"
+              type="number"
+              value={sequence}
+              onChange={(e) => setSequence(e.target.value)}
+              className="w-full px-4 py-2 rounded-lg border bg-gray-50"
             />
           </div>
 
-          {/* PASSWORD */}
-          <div>
-            <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-              Password
+          {/* Intro */}
+          <div className="md:col-span-2">
+            <label className="text-sm font-medium mb-2 block">
+              Intro *
             </label>
             <input
-              type="password"
-              placeholder="Enter password"
-              className="w-full px-4 py-2 rounded-lg
-                         bg-gray-50 dark:bg-slate-800
-                         border border-gray-200 dark:border-slate-700
-                         text-gray-800 dark:text-white outline-none
-                         focus:ring-2 focus:ring-blue-500"
+              value={intro}
+              onChange={(e) => setIntro(e.target.value)}
+              className="w-full px-4 py-2 rounded-lg border bg-gray-50"
             />
           </div>
 
-          {/* ROLE */}
-          <div>
-            <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-              Role
+          {/* Description */}
+          <div className="md:col-span-2">
+            <label className="text-sm font-medium mb-2 block">
+              Description
             </label>
-            <select
-              className="w-full px-4 py-2 rounded-lg
-                         bg-gray-50 dark:bg-slate-800
-                         border border-gray-200 dark:border-slate-700
-                         text-gray-800 dark:text-white outline-none"
-            >
-              <option>Admin</option>
-              <option>Editor</option>
-              <option>User</option>
-            </select>
+            <textarea
+              rows={4}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="w-full px-4 py-2 rounded-lg border bg-gray-50"
+            />
           </div>
 
-          {/* STATUS */}
+          {/* Banner */}
           <div>
-            <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-              Status
+            <label className="text-sm font-medium mb-2 block">
+              Banner
             </label>
-            <select
-              className="w-full px-4 py-2 rounded-lg
-                         bg-gray-50 dark:bg-slate-800
-                         border border-gray-200 dark:border-slate-700
-                         text-gray-800 dark:text-white outline-none"
-            >
-              <option>Active</option>
-              <option>Inactive</option>
-            </select>
-          </div>
-
-          {/* IMAGE UPLOAD */}
-          <div>
-            <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-              Profile Image
+            <label className="flex items-center gap-3 px-4 py-3 rounded-lg border-2 border-dashed cursor-pointer">
+              <Upload size={18} />
+              Upload banner
+              <input hidden type="file" onChange={handleBanner} />
             </label>
 
-           <label
-  className="flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer
-             bg-gray-50 dark:bg-slate-800
-             border border-dashed border-gray-300 dark:border-slate-600
-             hover:bg-gray-100 dark:hover:bg-slate-700 transition"
->
-  <Upload size={18} className="text-gray-700 dark:text-white" />
-
-  <span className="text-sm text-gray-700 dark:text-gray-300">
-    Upload image
-  </span>
-
-  <input
-    type="file"
-    hidden
-    onChange={handleImage}
-  />
-</label>
-
-            {preview && (
+            {bannerPreview && (
               <img
-                src={preview}
-                alt="preview"
-                className="mt-3 w-20 h-20 rounded-full object-cover ring-2 ring-blue-500"
+                src={bannerPreview}
+                className="mt-3 w-40 h-24 object-cover rounded-lg"
               />
             )}
           </div>
 
+          {/* Icon */}
+          <div>
+            <label className="text-sm font-medium mb-2 block">
+              Icon
+            </label>
+            <label className="flex items-center gap-3 px-4 py-3 rounded-lg border-2 border-dashed cursor-pointer">
+              <Upload size={18} />
+              Upload icon
+              <input hidden type="file" onChange={handleIcon} />
+            </label>
+
+            {iconPreview && (
+              <img
+                src={iconPreview}
+                className="mt-3 w-20 h-20 object-cover rounded-lg"
+              />
+            )}
+          </div>
         </div>
 
-        {/* ACTION BUTTONS */}
+        {/* Buttons */}
         <div className="flex justify-end gap-3 mt-8">
-
-          <button className="px-5 py-2 rounded-lg
-                             bg-gray-200 dark:bg-slate-700
-                             text-gray-700 dark:text-white
-                             hover:opacity-80">
+          <button
+            onClick={() => navigate("/sub-categories")}
+            className="px-5 py-2 rounded-lg bg-gray-200"
+          >
             Cancel
           </button>
 
-          <button className="px-5 py-2 rounded-lg
-                             bg-blue-600 hover:bg-blue-700
-                             text-white font-medium">
-            Save User
+          <button
+            disabled={submitting}
+            onClick={() => setOpenSaveModal(true)}
+            className="px-5 py-2 rounded-lg bg-blue-600 text-white"
+          >
+            Save Changes
           </button>
-
         </div>
-
       </div>
+
+      {/* Confirm Modal */}
+      <ConfirmModal
+        open={openSaveModal}
+        onClose={() => setOpenSaveModal(false)}
+        onConfirm={handleSaveConfirm}
+        title="Update SubCategory"
+        message="Are you sure you want to update this subcategory?"
+        type="success"
+        icon={<Save className="w-10 h-10 text-green-500" />}
+      />
     </div>
   );
 };
 
-export default AddUser;
+export default EditSubCategory;

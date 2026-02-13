@@ -1,7 +1,9 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Search, Plus, Eye, Edit, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { getOffers } from "../../services/offersapi"; 
+import toast from "react-hot-toast";
+import { getOffers, deleteOffer } from "../../services/offersapi";
+import ConfirmModal from "../../components/common/ConfirmModal";
 
 const statusStyle = (s) =>
   s === "Active"
@@ -27,30 +29,33 @@ const Offers = () => {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
 
+  const [openDeleteModal, setOpenDeleteModal] = useState(false);
+  const [deleteId, setDeleteId] = useState(null);
+
   // ---------------- Fetch Offers ----------------
   const fetchOffers = async () => {
     try {
       setLoading(true);
-      const res = await getOffers(); // API call
-      const formatted = (res?.data || res || []).map((item) => ({
+      const res = await getOffers();
+      const formatted = (res?.data || []).map((item) => ({
         id: item._id,
-
         title: item.title,
         sequence: item.sequence,
         description: item.description || "",
         discount: item.discount || 0,
-        status: item.status || "Active",
+        status: item.isActive ? "Active" : "Inactive",
         createdAt: item.createdAt,
-        offerDisplayType: item.offerDisplayType || "-", 
-        offerType: item.offerType || "-",             
-        offerMode: item.offerMode || "-",      
-        image: item.banner
-          ? `https://api.kushalapp.com/${item.banner}`
+        offerDisplayType: item.offerDisplayType || "-",
+        offerType: item.offerType || "-",
+        offerMode: item.offerMode || "-",
+        image: item.offerImage
+          ? `https://api.kushalapp.com${item.offerImage}`
           : "/images/offers/default.png",
       }));
       setData(formatted);
     } catch (err) {
       console.error(err);
+      toast.error("Failed to fetch offers");
     } finally {
       setLoading(false);
     }
@@ -61,9 +66,19 @@ const Offers = () => {
   }, []);
 
   // ---------------- Delete Offer ----------------
-   const handleDelete = async (id) => {
-    await deleteOffer(id);
-    fetchOffers();
+  const confirmDelete = async () => {
+    if (!deleteId) return;
+
+    try {
+      await deleteOffer(deleteId);
+      toast.success("Offer deleted successfully");
+      setOpenDeleteModal(false);
+      fetchOffers();
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to delete offer");
+      setOpenDeleteModal(false);
+    }
   };
 
   // ---------------- Filters ----------------
@@ -169,34 +184,30 @@ const Offers = () => {
                     <td className="p-4">{u.offerDisplayType}</td>
                     <td className="p-4">{u.offerType}</td>
                     <td className="p-4">{u.offerMode}</td>
-                    <td className="p-4 flex gap-3">
-                      
-                        <div className="flex justify-center gap-2">
-                        <button
-                          onClick={() =>
-                            navigate(`/offers/view/${u.id}`)
-                          }
-                          className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 hover:bg-blue-200 flex items-center justify-center"
-                        >
-                          <Eye size={16} className="text-blue-600" />
-                        </button>
+                    <td className="p-4 flex gap-2">
+                      <button
+                        onClick={() => navigate(`/offer-details/${u.id}`)}
+                        className=" cursor-pointer w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 hover:bg-blue-200 flex items-center justify-center"
+                      >
+                        <Eye size={16} className="text-blue-600" />
+                      </button>
 
-                        <button
-                          onClick={() =>
-                            navigate(`/offers/edit/${u.id}`)
-                          }
-                          className="w-8 h-8 rounded-full bg-yellow-100 dark:bg-yellow-900 hover:bg-yellow-200 flex items-center justify-center"
-                        >
-                          <Edit size={16} className="text-yellow-600" />
-                        </button>
+                      <button
+                        onClick={() => navigate(`/edit-offer/${u.id}`)}
+                        className=" cursor-pointer w-8 h-8 rounded-full bg-yellow-100 dark:bg-yellow-900 hover:bg-yellow-200 flex items-center justify-center"
+                      >
+                        <Edit size={16} className="text-yellow-600" />
+                      </button>
 
-                        <button
-                          onClick={() => handleDelete(u.id)}
-                          className="w-8 h-8 rounded-full bg-red-100 dark:bg-red-900 hover:bg-red-200 flex items-center justify-center"
-                        >
-                          <Trash2 size={16} className="text-red-600" />
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => {
+                          setDeleteId(u.id);
+                          setOpenDeleteModal(true);
+                        }}
+                        className=" cursor-pointer w-8 h-8 rounded-full bg-red-100 dark:bg-red-900 hover:bg-red-200 flex items-center justify-center"
+                      >
+                        <Trash2 size={16} className="text-red-600" />
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -212,6 +223,16 @@ const Offers = () => {
           </table>
         </div>
       </div>
+
+      {/* DELETE CONFIRM MODAL */}
+      <ConfirmModal
+        open={openDeleteModal}
+        onClose={() => setOpenDeleteModal(false)}
+        onConfirm={confirmDelete}
+        title="Delete Offer"
+        message="Are you sure you want to delete this offer?"
+        type="danger"
+      />
     </div>
   );
 };

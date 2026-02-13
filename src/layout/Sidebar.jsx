@@ -53,7 +53,7 @@ const menuItems = [
     label: "Sub Categories",
     subMenu: [
       { id: "all-sub-categories", label: "All Sub Categories", path: "/sub-categories" },
-      { id: "add-sub-category", label: "Add Sub Category", path: "/add-sub-category" },
+      { id: "add-sub-category", label: "Add Sub Category", path: "/add-subcategory" },
     ],
   },
   {

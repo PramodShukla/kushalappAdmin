@@ -1,172 +1,278 @@
-import React, { useState } from "react";
-import { Upload } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { Upload, Save, ArrowLeft } from "lucide-react";
+import toast from "react-hot-toast";
+import ConfirmModal from "../../components/common/ConfirmModal";
+import { getUserById, updateUser } from "../../services/userapi";
 
-const AddUser = () => {
-  const [preview, setPreview] = useState(null);
+const BASE_URL = "https://api.kushalapp.com";
 
+const EditUser = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+
+  /* ================= STATE ================= */
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    wpNumber: "",
+    gender: "",
+    role: "user",
+  });
+
+  const [profileFile, setProfileFile] = useState(null);
+  const [profilePreview, setProfilePreview] = useState(null);
+
+  const [loading, setLoading] = useState(true);
+  const [errors, setErrors] = useState({});
+  const [submitting, setSubmitting] = useState(false);
+  const [openSaveModal, setOpenSaveModal] = useState(false);
+
+  /* ================= FETCH USER ================= */
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await getUserById(id);
+        const data = res?.data?.data || res?.data;
+
+        setForm({
+          name: data.name || "",
+          email: data.email || "",
+          phone: data.phone || "",
+          wpNumber: data.wpNumber || "",
+          gender: data.gender || "",
+          role: data.role || "user",
+        });
+
+        if (data.profilePic) {
+          setProfilePreview(`${BASE_URL}${data.profilePic}`);
+        }
+      } catch (err) {
+        console.error(err);
+        toast.error("Failed to load user");
+        navigate("/users");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUser();
+  }, [id, navigate]);
+
+  /* ================= INPUT ================= */
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+    setErrors({ ...errors, [e.target.name]: "" });
+  };
+
+  /* ================= IMAGE ================= */
   const handleImage = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      setPreview(URL.createObjectURL(file));
+    if (!file) return;
+
+    if (!["image/png", "image/jpeg", "image/jpg", "image/webp"].includes(file.type)) {
+      toast.error("Only PNG, JPG, JPEG, WEBP allowed");
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Image must be under 2MB");
+      return;
+    }
+
+    setProfileFile(file);
+    setProfilePreview(URL.createObjectURL(file));
+  };
+
+  /* ================= VALIDATION ================= */
+  const validate = () => {
+    let err = {};
+
+    if (!form.phone) err.phone = "Phone is required";
+    if (form.email && !/\S+@\S+\.\S+/.test(form.email))
+      err.email = "Invalid email";
+
+    setErrors(err);
+    return Object.keys(err).length === 0;
+  };
+
+  /* ================= UPDATE ================= */
+  const handleSaveConfirm = async () => {
+    if (!validate()) {
+      toast.error("Please fix validation errors");
+      setOpenSaveModal(false);
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      const formData = new FormData();
+
+      Object.keys(form).forEach((key) => {
+        formData.append(key, form[key]);
+      });
+
+      if (profileFile) {
+        formData.append("profilePic", profileFile);
+      }
+
+      await updateUser(id, formData);
+
+      toast.success("User updated successfully");
+      setOpenSaveModal(false);
+
+      setTimeout(() => navigate("/users"), 800);
+    } catch (error) {
+      console.error(error);
+      toast.error(
+        error?.response?.data?.message || "Failed to update user"
+      );
+      setOpenSaveModal(false);
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  return (
-    <div className=" p-6 space-y-6">
+  /* ================= LOADING ================= */
+  if (loading) {
+    return (
+      <div className="p-8 animate-pulse">
+        <div className="h-8 bg-gray-300 rounded w-1/3 mb-6"></div>
+        <div className="grid md:grid-cols-2 gap-6">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="h-12 bg-gray-300 rounded"></div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
-      {/* HEADER */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          Add New User
-        </h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
-          Create and register a new user account
-        </p>
+  /* ================= UI ================= */
+  return (
+    <div className="p-8 min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-slate-800">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold dark:text-white">Edit User</h1>
+
+        <button
+          onClick={() => navigate("/users")}
+          className="px-4 py-2 rounded-xl bg-gray-200 flex items-center gap-2"
+        >
+          <ArrowLeft size={18} />
+          Back
+        </button>
       </div>
 
-      {/* CARD */}
-      <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-2xl shadow-sm p-6">
-
+      <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-xl p-6">
         <div className="grid md:grid-cols-2 gap-6">
 
-          {/* NAME */}
-          <div>
-            <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-              Full Name
-            </label>
-            <input
-              type="text"
-              placeholder="Enter full name"
-              className="w-full px-4 py-2 rounded-lg
-                         bg-gray-50 dark:bg-slate-800
-                         border border-gray-200 dark:border-slate-700
-                         text-gray-800 dark:text-white outline-none
-                         focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
+          {/* Name */}
+          <Input label="Name" name="name" form={form} handleChange={handleChange} />
 
-          {/* EMAIL */}
-          <div>
-            <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-              Email
-            </label>
-            <input
-              type="email"
-              placeholder="Enter email"
-              className="w-full px-4 py-2 rounded-lg
-                         bg-gray-50 dark:bg-slate-800
-                         border border-gray-200 dark:border-slate-700
-                         text-gray-800 dark:text-white outline-none
-                         focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
+          {/* Email */}
+          <Input label="Email" name="email" form={form} handleChange={handleChange} error={errors.email} />
 
-          {/* PASSWORD */}
-          <div>
-            <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-              Password
-            </label>
-            <input
-              type="password"
-              placeholder="Enter password"
-              className="w-full px-4 py-2 rounded-lg
-                         bg-gray-50 dark:bg-slate-800
-                         border border-gray-200 dark:border-slate-700
-                         text-gray-800 dark:text-white outline-none
-                         focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
+          {/* Phone */}
+          <Input label="Phone *" name="phone" form={form} handleChange={handleChange} error={errors.phone} />
 
-          {/* ROLE */}
+          {/* WhatsApp */}
+          <Input label="WhatsApp Number" name="wpNumber" form={form} handleChange={handleChange} />
+
+          {/* Gender */}
           <div>
-            <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-              Role
-            </label>
+            <label className="text-sm font-semibold">Gender</label>
             <select
-              className="w-full px-4 py-2 rounded-lg
-                         bg-gray-50 dark:bg-slate-800
-                         border border-gray-200 dark:border-slate-700
-                         text-gray-800 dark:text-white outline-none"
+              name="gender"
+              value={form.gender}
+              onChange={handleChange}
+              className="w-full mt-2 px-4 py-3 rounded-xl bg-gray-50 border"
             >
-              <option>Admin</option>
-              <option>Editor</option>
-              <option>User</option>
+              <option value="">Select</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
             </select>
           </div>
 
-          {/* STATUS */}
+          {/* Role */}
           <div>
-            <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-              Status
-            </label>
+            <label className="text-sm font-semibold">Role</label>
             <select
-              className="w-full px-4 py-2 rounded-lg
-                         bg-gray-50 dark:bg-slate-800
-                         border border-gray-200 dark:border-slate-700
-                         text-gray-800 dark:text-white outline-none"
+              name="role"
+              value={form.role}
+              onChange={handleChange}
+              className="w-full mt-2 px-4 py-3 rounded-xl bg-gray-50 border"
             >
-              <option>Active</option>
-              <option>Inactive</option>
+              <option value="user">User</option>
+              <option value="admin">Admin</option>
             </select>
           </div>
 
-          {/* IMAGE UPLOAD */}
-          <div>
-            <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-              Profile Image
+          {/* Profile Image */}
+          <div className="md:col-span-2">
+            <label className="text-sm font-semibold">Profile Picture</label>
+            <label className="flex items-center gap-2 mt-2 px-4 py-4 border-2 border-dashed rounded-xl cursor-pointer">
+              <Upload size={18} /> Upload Image
+              <input hidden type="file" onChange={handleImage} />
             </label>
 
-           <label
-  className="flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer
-             bg-gray-50 dark:bg-slate-800
-             border border-dashed border-gray-300 dark:border-slate-600
-             hover:bg-gray-100 dark:hover:bg-slate-700 transition"
->
-  <Upload size={18} className="text-gray-700 dark:text-white" />
-
-  <span className="text-sm text-gray-700 dark:text-gray-300">
-    Upload image
-  </span>
-
-  <input
-    type="file"
-    hidden
-    onChange={handleImage}
-  />
-</label>
-
-            {preview && (
+            {profilePreview && (
               <img
-                src={preview}
+                src={profilePreview}
                 alt="preview"
-                className="mt-3 w-20 h-20 rounded-full object-cover ring-2 ring-blue-500"
+                className="mt-3 w-28 h-28 object-cover rounded-full"
               />
             )}
           </div>
-
         </div>
 
-        {/* ACTION BUTTONS */}
-        <div className="flex justify-end gap-3 mt-8">
-
-          <button className="px-5 py-2 rounded-lg
-                             bg-gray-200 dark:bg-slate-700
-                             text-gray-700 dark:text-white
-                             hover:opacity-80">
+        {/* Actions */}
+        <div className="flex justify-end gap-4 mt-8">
+          <button
+            onClick={() => navigate("/users")}
+            className="px-6 py-3 rounded-xl bg-gray-200"
+          >
             Cancel
           </button>
 
-          <button className="px-5 py-2 rounded-lg
-                             bg-blue-600 hover:bg-blue-700
-                             text-white font-medium">
-            Save User
+          <button
+            disabled={submitting}
+            onClick={() => setOpenSaveModal(true)}
+            className="px-6 py-3 rounded-xl bg-blue-600 text-white flex items-center gap-2"
+          >
+            <Save size={18} />
+            Save Changes
           </button>
-
         </div>
-
       </div>
+
+      {/* Confirm Modal */}
+      <ConfirmModal
+        open={openSaveModal}
+        onClose={() => setOpenSaveModal(false)}
+        onConfirm={handleSaveConfirm}
+        title="Update User"
+        message="Do you want to update this user?"
+        type="success"
+      />
     </div>
   );
 };
 
-export default AddUser;
+/* ================= INPUT COMPONENT ================= */
+const Input = ({ label, name, form, handleChange, error }) => (
+  <div>
+    <label className="text-sm font-semibold">{label}</label>
+    <input
+      name={name}
+      value={form[name]}
+      onChange={handleChange}
+      className="w-full mt-2 px-4 py-3 rounded-xl bg-gray-50 border"
+    />
+    {error && <p className="text-red-500 text-sm">{error}</p>}
+  </div>
+);
+
+export default EditUser;

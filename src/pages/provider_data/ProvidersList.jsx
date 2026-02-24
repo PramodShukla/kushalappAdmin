@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Search, Eye, Edit, Trash2, Plus } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import toast from "react-hot-toast";
 import { getProviders, deleteProvider } from "../../services/providerapi";
 import ConfirmModal from "../../components/common/ConfirmModal";
@@ -8,7 +8,7 @@ import ConfirmModal from "../../components/common/ConfirmModal";
 /* ---------------- Skeleton Row ---------------- */
 const SkeletonRow = () => (
   <tr>
-    {[...Array(8)].map((_, i) => (
+    {[...Array(10)].map((_, i) => (
       <td key={i} className="p-4">
         <div className="h-4 rounded bg-gray-200 dark:bg-slate-700 animate-pulse" />
       </td>
@@ -26,6 +26,8 @@ const safe = (v) =>
 
 const ProvidersList = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+
   const [loading, setLoading] = useState(true);
   const [providers, setProviders] = useState([]);
   const [search, setSearch] = useState("");
@@ -34,17 +36,20 @@ const ProvidersList = () => {
   const [openDelete, setOpenDelete] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
 
+  /* ================= GET CATEGORY FROM URL ================= */
+  const queryParams = new URLSearchParams(location.search);
+  const categoryId = queryParams.get("category");
+  const categoryName = queryParams.get("name");
+
   /* ================= FETCH PROVIDERS ================= */
   const fetchProviders = async () => {
     try {
       setLoading(true);
       const res = await getProviders();
-
-      // Handle different API response formats
       const list = res?.data?.data || res?.data || [];
 
       const allProviders = list.map((p, index) => ({
-        id: p._id, // IMPORTANT: real Mongo ID
+        id: p._id,
         sequence: index + 1,
         name: safe(p.name),
         phone: safe(p.phone),
@@ -52,8 +57,26 @@ const ProvidersList = () => {
         city: safe(p.address?.city),
         gender: safe(p.gender),
         planType: p.isFeatured ? "Featured" : "Standard",
+        category: p.category
+          ? {
+              id: p.category._id,
+              description: safe(p.category.description),
+              icon: p.category.icon
+                ? p.category.icon.startsWith("http")
+                  ? p.category.icon
+                  : `https://api.kushalapp.com${p.category.icon}`
+                : "/images/default-category.png",
+              banner: p.category.banner
+                ? p.category.banner.startsWith("http")
+                  ? p.category.banner
+                  : `https://api.kushalapp.com${p.category.banner}`
+                : "/images/default-banner.png",
+            }
+          : null,
         profilePic: p.profilePic
-          ? `https://api.kushalapp.com${p.profilePic}`
+          ? p.profilePic.startsWith("http")
+            ? p.profilePic
+            : `https://api.kushalapp.com${p.profilePic}`
           : "/images/default-profile.png",
         createdAt: p.createdAt ? new Date(p.createdAt) : null,
       }));
@@ -90,9 +113,13 @@ const ProvidersList = () => {
     }
   };
 
-  /* ================= FILTER ================= */
+  /* ================= FILTER LOGIC ================= */
   const filteredProviders = useMemo(() => {
     return providers.filter((p) => {
+      const matchesCategory = categoryId
+        ? p.category?.id === categoryId
+        : true;
+
       const matchesSearch = p.name
         .toLowerCase()
         .includes(search.toLowerCase());
@@ -105,17 +132,26 @@ const ProvidersList = () => {
         ? p.createdAt <= new Date(dateTo)
         : true;
 
-      return matchesSearch && matchesFrom && matchesTo;
+      return matchesCategory && matchesSearch && matchesFrom && matchesTo;
     });
-  }, [search, dateFrom, dateTo, providers]);
+  }, [search, dateFrom, dateTo, providers, categoryId]);
 
   return (
     <div className="space-y-6 p-4">
       {/* HEADER */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold dark:text-white">
-          Providers List
-        </h1>
+        <div>
+          <h1 className="text-2xl font-bold dark:text-white">
+            Providers List
+          </h1>
+
+          {categoryName && (
+            <p className="text-sm text-gray-500">
+              Filtered by Category:{" "}
+              <span className="font-medium">{categoryName}</span>
+            </p>
+          )}
+        </div>
 
         <button
           onClick={() => navigate("/add-provider")}
@@ -127,7 +163,6 @@ const ProvidersList = () => {
 
       {/* SEARCH + DATE FILTERS */}
       <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-4 flex flex-col md:flex-row gap-4 md:items-end">
-        {/* Search */}
         <div className="flex-1 relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
@@ -139,7 +174,6 @@ const ProvidersList = () => {
           />
         </div>
 
-        {/* Date From */}
         <div>
           <label className="text-sm text-gray-600 dark:text-gray-300">
             From
@@ -152,7 +186,6 @@ const ProvidersList = () => {
           />
         </div>
 
-        {/* Date To */}
         <div>
           <label className="text-sm text-gray-600 dark:text-gray-300">
             To
@@ -173,12 +206,13 @@ const ProvidersList = () => {
             <thead className="bg-gray-50 dark:bg-slate-800 text-left text-sm">
               <tr>
                 <th className="p-4">Seq</th>
-                <th className="p-4">Name</th>
+                <th className="p-4">Provider</th>
                 <th className="p-4">Phone</th>
                 <th className="p-4">Gender</th>
                 <th className="p-4">City</th>
                 <th className="p-4">Plan</th>
                 <th className="p-4">Rating</th>
+                <th className="p-4">Category</th>
                 <th className="p-4 text-center">Actions</th>
               </tr>
             </thead>
@@ -210,10 +244,21 @@ const ProvidersList = () => {
                     <td className="p-4">{p.planType}</td>
                     <td className="p-4">{p.rating}</td>
 
-                    {/* ACTIONS */}
+                    <td className="p-4 flex items-center gap-2">
+                      {p.category && (
+                        <>
+                          <img
+                            src={p.category.icon}
+                            alt={p.category.description}
+                            className="w-6 h-6 rounded-full object-cover"
+                          />
+                          <span>{p.category.description}</span>
+                        </>
+                      )}
+                    </td>
+
                     <td className="p-4">
                       <div className="flex justify-center gap-2">
-                        {/* View */}
                         <button
                           onClick={() =>
                             navigate(`/provider-details/${p.id}`)
@@ -223,7 +268,6 @@ const ProvidersList = () => {
                           <Eye size={16} className="text-blue-600" />
                         </button>
 
-                        {/* Edit */}
                         <button
                           onClick={() =>
                             navigate(`/edit-provider/${p.id}`)
@@ -233,7 +277,6 @@ const ProvidersList = () => {
                           <Edit size={16} className="text-yellow-600" />
                         </button>
 
-                        {/* Delete */}
                         <button
                           onClick={() => handleDeleteClick(p.id)}
                           className="w-8 h-8 rounded-full bg-red-100 hover:bg-red-200 flex items-center justify-center"
@@ -247,7 +290,7 @@ const ProvidersList = () => {
 
               {!loading && filteredProviders.length === 0 && (
                 <tr>
-                  <td colSpan="8" className="p-6 text-center text-gray-500">
+                  <td colSpan="9" className="p-6 text-center text-gray-500">
                     No providers found
                   </td>
                 </tr>
@@ -257,7 +300,6 @@ const ProvidersList = () => {
         </div>
       </div>
 
-      {/* DELETE MODAL */}
       <ConfirmModal
         open={openDelete}
         onClose={() => setOpenDelete(false)}

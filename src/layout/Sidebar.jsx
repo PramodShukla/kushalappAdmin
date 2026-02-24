@@ -1,16 +1,19 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { logout } from "../utils/auth";
 import { NavLink, useLocation } from "react-router-dom";
 import {
   Zap,
+  Bell,
+  Component,
   LayoutDashboard,
   Users as UsersIcon,
   ChevronDown,
   ChevronUp,
   ChartBarStacked,
   TicketPercent,
+  CreditCard,
   LogOut,
-  Image
+  Image,
 } from "lucide-react";
 
 const menuItems = [
@@ -19,6 +22,20 @@ const menuItems = [
     icon: LayoutDashboard,
     label: "Dashboard",
     path: "/dashboard",
+    subMenu: null,
+  },
+  {
+    id: "subscribers",
+    icon: CreditCard,
+    label: "Subscribers",
+    subMenu: [
+      { id: "all-subscribers", label: "All Subscribers", path: "/subscribers" },
+      {
+        id: "add-subscribers",
+        label: "Add Subscribers",
+        path: "/add-subscribers",
+      },
+    ],
   },
   {
     id: "users",
@@ -40,25 +57,50 @@ const menuItems = [
   },
   {
     id: "categories",
-    icon: ChartBarStacked ,
+    icon: ChartBarStacked,
     label: "Categories",
     subMenu: [
       { id: "all-categories", label: "All Categories", path: "/categories" },
       { id: "add-category", label: "Add Category", path: "/add-category" },
     ],
   },
-   {
+  {
     id: "sub-categories",
-    icon: ChartBarStacked ,
+    icon: ChartBarStacked,
     label: "Sub Categories",
     subMenu: [
-      { id: "all-sub-categories", label: "All Sub Categories", path: "/sub-categories" },
-      { id: "add-sub-category", label: "Add Sub Category", path: "/add-subcategory" },
+      {
+        id: "all-sub-categories",
+        label: "All Sub Categories",
+        path: "/sub-categories",
+      },
+      {
+        id: "add-subcategory",
+        label: "Add Sub Category",
+        path: "/add-subcategory",
+      },
+    ],
+  },
+  {
+    id: "subscriptions",
+    icon: CreditCard,
+    label: "All Subscriptions",
+    subMenu: [
+      {
+        id: "all-subscriptions",
+        label: "All Subscriptions",
+        path: "/subscriptions",
+      },
+      {
+        id: "add-subscriptions",
+        label: "Add Subscriptions",
+        path: "/add-subscriptions",
+      },
     ],
   },
   {
     id: "offers",
-    icon: TicketPercent ,
+    icon: TicketPercent,
     label: "Offers",
     subMenu: [
       { id: "all-offers", label: "All Offers", path: "/offers" },
@@ -67,11 +109,37 @@ const menuItems = [
   },
   {
     id: "slider",
-    icon: Image ,
+    icon: Image,
     label: "Slider",
     subMenu: [
       { id: "all-slider", label: "All Slider", path: "/slider" },
       { id: "add-slider", label: "Add Slider", path: "/add-slider" },
+    ],
+  },
+  {
+    id: "notifications",
+    icon: Bell,
+    label: "Notifications",
+    subMenu: [
+      {
+        id: "all-notifications",
+        label: "All Notifications",
+        path: "/notifications",
+      },
+      {
+        id: "add-notification",
+        label: "Add Notification",
+        path: "/add-notification",
+      },
+    ],
+  },
+  {
+    id: "addons",
+    icon: Component,
+    label: "Addons",
+    subMenu: [
+      { id: "all-addons", label: "All Addons", path: "/addons" },
+      { id: "add-addon", label: "Add Addon", path: "/add-addon" },
     ],
   },
   {
@@ -150,19 +218,16 @@ function Sidebar({ collapsed, mobileOpen, setMobileOpen }) {
         `}
       >
         {/* LOGO */}
-        <div className="p-6 border-b border-slate-200/50 dark:border-slate-700/50">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
-              <Zap className="w-6 h-6 text-white" />
+        <div className="p-2 border-b border-slate-200/50 dark:border-slate-700/50">
+          <div className="flex items-center space-x-1 justify-center">
+            <div className="w-20 h-20 rounded-xl flex items-center justify-center">
+              <img src="/pklogo.png" alt="" />
             </div>
             {!collapsed && (
               <div>
-                <h1 className="text-xl font-bold text-slate-800 dark:text-white">
+                {/* <h1 className="text-xl font-bold text-slate-800 dark:text-white">
                   ADMIN
-                </h1>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Admin Panel
-                </p>
+                </h1> */}
               </div>
             )}
           </div>
@@ -213,13 +278,13 @@ function Sidebar({ collapsed, mobileOpen, setMobileOpen }) {
                       <Icon className="w-5 h-5" />
                       {!collapsed && <span>{item.label}</span>}
                     </div>
-                    {!collapsed && item.subMenu && (
-                      isOpen ? (
+                    {!collapsed &&
+                      item.subMenu &&
+                      (isOpen ? (
                         <ChevronUp className="w-4 h-4" />
                       ) : (
                         <ChevronDown className="w-4 h-4" />
-                      )
-                    )}
+                      ))}
                   </button>
                 )}
 

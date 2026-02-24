@@ -5,8 +5,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import ConfirmModal from "../../components/common/ConfirmModal";
 import { getCategory, updateCategory } from "../../services/categoryApi";
 
-const BASE_URL = "https://api.kushalapp.com"; // Change if needed
-
 const EditCategory = () => {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -35,8 +33,7 @@ const EditCategory = () => {
     const fetchCategory = async () => {
       try {
         const res = await getCategory(id);
-
-      const data = res.data.data || res.data;
+        const data = res.data.data || res.data;
 
         console.log("Category Data:", data);
 
@@ -45,28 +42,16 @@ const EditCategory = () => {
           intro: data.intro || "",
           description: data.description || "",
           sequence:
-          data.sequence !== undefined && data.sequence !== null
-            ? String(data.sequence)
-            : "",
+            data.sequence !== undefined && data.sequence !== null
+              ? String(data.sequence)
+              : "",
         });
 
         // Banner preview
-        if (data.banner) {
-          setBannerPreview(
-            data.banner.startsWith("http")
-              ? data.banner
-              : `${BASE_URL}${data.banner}`
-          );
-        }
+        if (data.banner) setBannerPreview(data.banner);
 
         // Icon preview
-        if (data.icon) {
-          setIconPreview(
-            data.icon.startsWith("http")
-              ? data.icon
-              : `${BASE_URL}${data.icon}`
-          );
-        }
+        if (data.icon) setIconPreview(data.icon);
       } catch (err) {
         toast.error("Failed to load category");
       } finally {
@@ -80,12 +65,8 @@ const EditCategory = () => {
   // ---------------- CLEAN PREVIEW ----------------
   useEffect(() => {
     return () => {
-      if (bannerPreview?.startsWith("blob:")) {
-        URL.revokeObjectURL(bannerPreview);
-      }
-      if (iconPreview?.startsWith("blob:")) {
-        URL.revokeObjectURL(iconPreview);
-      }
+      if (bannerPreview?.startsWith("blob:")) URL.revokeObjectURL(bannerPreview);
+      if (iconPreview?.startsWith("blob:")) URL.revokeObjectURL(iconPreview);
     };
   }, [bannerPreview, iconPreview]);
 
@@ -101,7 +82,6 @@ const EditCategory = () => {
     if (!file) return;
 
     const allowedTypes = ["image/png", "image/jpeg", "image/jpg"];
-
     if (!allowedTypes.includes(file.type)) {
       toast.error("Only PNG, JPG, JPEG allowed");
       return;
@@ -126,7 +106,6 @@ const EditCategory = () => {
   // ---------------- VALIDATION ----------------
   const validate = () => {
     let err = {};
-
     if (!form.name) err.name = "Name is required";
     if (!form.intro) err.intro = "Intro is required";
     if (!form.description) err.description = "Description is required";
@@ -153,7 +132,6 @@ const EditCategory = () => {
       formData.append("description", form.description);
       formData.append("sequence", Number(form.sequence));
 
-      // Only send file if user selected new one
       if (bannerFile) formData.append("banner", bannerFile);
       if (iconFile) formData.append("icon", iconFile);
 
@@ -193,9 +171,7 @@ const EditCategory = () => {
   return (
     <div className="p-8 min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-slate-800">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold dark:text-white">
-          Edit Category
-        </h1>
+        <h1 className="text-3xl font-bold dark:text-white">Edit Category</h1>
         <p className="text-gray-600 dark:text-gray-300 mt-2">
           Update category details
         </p>
@@ -214,9 +190,7 @@ const EditCategory = () => {
               onChange={handleChange}
               className="w-full mt-2 px-4 py-3 rounded-xl bg-gray-50 dark:bg-slate-800 border"
             />
-            {errors.name && (
-              <p className="text-red-500 text-sm">{errors.name}</p>
-            )}
+            {errors.name && <p className="text-red-500 text-sm">{errors.name}</p>}
           </div>
 
           {/* Sequence */}
@@ -231,9 +205,7 @@ const EditCategory = () => {
               onChange={handleChange}
               className="w-full mt-2 px-4 py-3 rounded-xl bg-gray-50 dark:bg-slate-800 border"
             />
-            {errors.sequence && (
-              <p className="text-red-500 text-sm">{errors.sequence}</p>
-            )}
+            {errors.sequence && <p className="text-red-500 text-sm">{errors.sequence}</p>}
           </div>
 
           {/* Intro */}
@@ -268,11 +240,7 @@ const EditCategory = () => {
             <label className="text-sm font-semibold">Banner Image</label>
             <label className="flex items-center gap-2 mt-2 px-4 py-4 border-2 border-dashed rounded-xl cursor-pointer">
               <Upload size={18} /> Upload Banner
-              <input
-                hidden
-                type="file"
-                onChange={(e) => handleImage(e, "banner")}
-              />
+              <input hidden type="file" onChange={(e) => handleImage(e, "banner")} />
             </label>
             {bannerPreview && (
               <img
@@ -288,11 +256,7 @@ const EditCategory = () => {
             <label className="text-sm font-semibold">Icon Image</label>
             <label className="flex items-center gap-2 mt-2 px-4 py-4 border-2 border-dashed rounded-xl cursor-pointer">
               <Upload size={18} /> Upload Icon
-              <input
-                hidden
-                type="file"
-                onChange={(e) => handleImage(e, "icon")}
-              />
+              <input hidden type="file" onChange={(e) => handleImage(e, "icon")} />
             </label>
             {iconPreview && (
               <img
@@ -318,11 +282,7 @@ const EditCategory = () => {
             onClick={() => setOpenSaveModal(true)}
             className="px-6 py-3 rounded-xl bg-blue-600 text-white font-semibold shadow flex items-center gap-2"
           >
-            {submitting ? (
-              <Loader2 className="animate-spin" size={18} />
-            ) : (
-              <Save size={18} />
-            )}
+            {submitting ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
             Update Category
           </button>
         </div>

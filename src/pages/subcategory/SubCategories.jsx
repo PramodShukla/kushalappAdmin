@@ -7,6 +7,9 @@ import {
   getSubCategories,
   deleteSubCategory,
 } from "../../services/subcategoryapi";
+import { getCategories } from "../../services/categoryApi"; // for category filter
+
+const BASE_URL = "https://api.kushalapp.com";
 
 /* ---------- Safe Value Helper ---------- */
 const safe = (v) => (v === undefined || v === null || v === "" ? "-" : v);
@@ -36,12 +39,15 @@ const SubCategories = () => {
   const [search, setSearch] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState(""); // new filter
+
+  const [categories, setCategories] = useState([]); // list of categories
 
   // Delete modal state
   const [deleteId, setDeleteId] = useState(null);
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
 
-  /* ================= FETCH ================= */
+  /* ================= FETCH SUBCATEGORIES ================= */
   const fetchSubCategories = async () => {
     try {
       setLoading(true);
@@ -58,12 +64,15 @@ const SubCategories = () => {
         name: safe(item.name),
         sequence: item.sequence ?? index + 1,
         description: safe(item.description),
+        categoryId: item.category?._id || "",
         categoryName: safe(item.category?.name),
         providers: item.providerCount === 0 ? 0 : safe(item.providerCount),
         status: item.isActive ?? true,
         createdAt: item.createdAt || null,
         image: item.banner
-          ? `https://api.kushalapp.com${item.banner}`
+          ? item.banner.startsWith("http")
+            ? item.banner
+            : `${BASE_URL}${item.banner}`
           : "/images/categories/default.png",
       }));
 
@@ -77,7 +86,24 @@ const SubCategories = () => {
     }
   };
 
+  /* ================= FETCH CATEGORIES ================= */
+  const fetchCategories = async () => {
+    try {
+      const res = await getCategories();
+      const list = Array.isArray(res?.data?.data)
+        ? res.data.data
+        : Array.isArray(res?.data)
+        ? res.data
+        : [];
+      setCategories(list);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to load categories");
+    }
+  };
+
   useEffect(() => {
+    fetchCategories();
     fetchSubCategories();
   }, []);
 
@@ -111,15 +137,17 @@ const SubCategories = () => {
         (u.description || "").toLowerCase().includes(search.toLowerCase()) ||
         (u.categoryName || "").toLowerCase().includes(search.toLowerCase());
 
-      if (!u.createdAt) return textMatch;
+      const categoryMatch = categoryFilter ? u.categoryId === categoryFilter : true;
+
+      if (!u.createdAt) return textMatch && categoryMatch;
 
       const created = new Date(u.createdAt);
       const fromOk = fromDate ? created >= new Date(fromDate) : true;
       const toOk = toDate ? created <= new Date(toDate) : true;
 
-      return textMatch && fromOk && toOk;
+      return textMatch && fromOk && toOk && categoryMatch;
     });
-  }, [search, fromDate, toDate, data]);
+  }, [search, fromDate, toDate, data, categoryFilter]);
 
   return (
     <div className="space-y-6">
@@ -137,7 +165,7 @@ const SubCategories = () => {
 
       {/* FILTER BAR */}
       <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-4">
-        <div className="grid md:grid-cols-3 gap-4">
+        <div className="grid md:grid-cols-4 gap-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
@@ -148,6 +176,19 @@ const SubCategories = () => {
               className="w-full pl-10 pr-4 py-2 rounded-lg bg-gray-50 dark:bg-slate-800"
             />
           </div>
+
+          <select
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+            className="px-3 py-2 rounded-lg bg-gray-50 dark:bg-slate-800"
+          >
+            <option value="">All Categories</option>
+            {categories.map((cat) => (
+              <option key={cat._id} value={cat._id}>
+                {cat.name}
+              </option>
+            ))}
+          </select>
 
           <input
             type="date"
@@ -202,10 +243,7 @@ const SubCategories = () => {
                   <td className="p-4">{u.categoryName}</td>
 
                   <td
-                    className="p-4 text-blue-600 cursor-pointer"
-                    onClick={() =>
-                      navigate(`/providers?subcategoryId=${u.id}`)
-                    }
+                    className="p-4 text-blue-600 "
                   >
                     {u.providers}
                   </td>

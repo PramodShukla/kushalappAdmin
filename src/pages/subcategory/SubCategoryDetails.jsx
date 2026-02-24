@@ -19,7 +19,21 @@ const SubCategoryDetail = () => {
       try {
         const res = await getSubCategory(id);
         const data = res?.data?.data || res?.data;
-        setSubCategory(data);
+
+        // Fix image URLs
+        const bannerUrl = data.banner
+          ? data.banner.startsWith("http")
+            ? data.banner
+            : `${BASE_URL}${data.banner}`
+          : null;
+
+        const iconUrl = data.icon
+          ? data.icon.startsWith("http")
+            ? data.icon
+            : `${BASE_URL}${data.icon}`
+          : null;
+
+        setSubCategory({ ...data, bannerUrl, iconUrl });
       } catch (error) {
         toast.error("Failed to load subcategory");
         navigate("/sub-categories");
@@ -53,16 +67,7 @@ const SubCategoryDetail = () => {
 
   if (!subcategory) return null;
 
-  const status =
-    subcategory.isActive === false ? "Inactive" : "Active";
-
-  const bannerUrl = subcategory.banner
-    ? `${BASE_URL}${subcategory.banner}`
-    : null;
-
-  const iconUrl = subcategory.icon
-    ? `${BASE_URL}${subcategory.icon}`
-    : null;
+  const status = subcategory.isActive === false ? "Inactive" : "Active";
 
   /* ---------------- UI ---------------- */
   return (
@@ -102,12 +107,9 @@ const SubCategoryDetail = () => {
         <div className="grid lg:grid-cols-3 gap-8">
           {/* LEFT: Details */}
           <div className="lg:col-span-2 bg-gray-50 dark:bg-slate-800 rounded-2xl space-y-4 divide-y">
-            
             {/* Name */}
             <div className="grid grid-cols-3 gap-4 p-4 items-center">
-              <div className="text-sm font-semibold text-gray-500">
-                Name
-              </div>
+              <div className="text-sm font-semibold text-gray-500">Name</div>
               <div className="col-span-2 dark:text-white">
                 {subcategory.name || "-"}
               </div>
@@ -135,9 +137,7 @@ const SubCategoryDetail = () => {
 
             {/* Status */}
             <div className="grid grid-cols-3 gap-4 p-4 items-center">
-              <div className="text-sm font-semibold text-gray-500">
-                Status
-              </div>
+              <div className="text-sm font-semibold text-gray-500">Status</div>
               <div className="col-span-2">
                 <span
                   className={`px-3 py-1 rounded-full text-sm font-medium ${
@@ -153,9 +153,7 @@ const SubCategoryDetail = () => {
 
             {/* Intro */}
             <div className="grid grid-cols-3 gap-4 p-4 items-start">
-              <div className="text-sm font-semibold text-gray-500">
-                Intro
-              </div>
+              <div className="text-sm font-semibold text-gray-500">Intro</div>
               <div className="col-span-2 dark:text-white whitespace-pre-line">
                 {subcategory.intro || "-"}
               </div>
@@ -179,9 +177,9 @@ const SubCategoryDetail = () => {
               <p className="text-sm font-semibold text-gray-500 mb-3">
                 Banner Image
               </p>
-              {bannerUrl ? (
+              {subcategory.bannerUrl ? (
                 <img
-                  src={bannerUrl}
+                  src={subcategory.bannerUrl}
                   alt="banner"
                   className="w-full h-40 object-cover rounded-xl"
                 />
@@ -195,9 +193,9 @@ const SubCategoryDetail = () => {
               <p className="text-sm font-semibold text-gray-500 mb-3">
                 Icon Image
               </p>
-              {iconUrl ? (
+              {subcategory.iconUrl ? (
                 <img
-                  src={iconUrl}
+                  src={subcategory.iconUrl}
                   alt="icon"
                   className="w-24 h-24 object-cover rounded-xl mx-auto"
                 />

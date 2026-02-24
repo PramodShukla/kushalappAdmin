@@ -54,7 +54,9 @@ const Users = () => {
         status: u.isPhoneVerified ?? false,
         createdAt: u.createdAt || null,
         image: u.profilePic
-          ? `${BASE_URL}${u.profilePic}`
+          ? u.profilePic.startsWith("http")
+            ? u.profilePic
+            : `${BASE_URL}${u.profilePic}`
           : "/images/default-user.png",
       }));
 
@@ -189,9 +191,7 @@ const Users = () => {
                       />
                       <div>
                         <div className="font-medium">{u.name}</div>
-                        <div className="text-xs text-gray-500">
-                          {u.phone}
-                        </div>
+                        <div className="text-xs text-gray-500">{u.phone}</div>
                       </div>
                     </div>
                   </td>

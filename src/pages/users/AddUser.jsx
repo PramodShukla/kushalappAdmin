@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Upload, Save } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -29,8 +29,8 @@ const AddUser = () => {
   const validateImage = (file) => {
     if (!file) return false;
 
-    if (!["image/png", "image/jpeg", "image/jpg"].includes(file.type)) {
-      toast.error("Only PNG, JPG, JPEG allowed");
+    if (!["image/png", "image/jpeg", "image/jpg", "image/webp"].includes(file.type)) {
+      toast.error("Only PNG, JPG, JPEG, WEBP allowed");
       return false;
     }
 
@@ -112,7 +112,7 @@ const AddUser = () => {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
       {/* HEADER */}
       <div>
         <h1 className="text-2xl font-bold">Add User</h1>
@@ -122,101 +122,18 @@ const AddUser = () => {
       {/* CARD */}
       <div className="bg-white border rounded-2xl shadow-sm p-6">
         <div className="grid md:grid-cols-2 gap-6">
-
           {/* NAME */}
-          <div>
-            <label className="block text-sm font-medium mb-2">
-              Name <span className="text-red-500">*</span>
-            </label>
-            <input
-              name="name"
-              value={form.name}
-              onChange={handleChange}
-              className="w-full px-4 py-2 rounded-lg border bg-gray-50"
-            />
-            {errors.name && (
-              <p className="text-red-500 text-sm">{errors.name}</p>
-            )}
-          </div>
-
+          <Input label="Name" name="name" value={form.name} onChange={handleChange} error={errors.name} />
           {/* EMAIL */}
-          <div>
-            <label className="block text-sm font-medium mb-2">
-              Email <span className="text-red-500">*</span>
-            </label>
-            <input
-              name="email"
-              value={form.email}
-              onChange={handleChange}
-              className="w-full px-4 py-2 rounded-lg border bg-gray-50"
-            />
-            {errors.email && (
-              <p className="text-red-500 text-sm">{errors.email}</p>
-            )}
-          </div>
-
+          <Input label="Email" name="email" value={form.email} onChange={handleChange} error={errors.email} />
           {/* PHONE */}
-          <div>
-            <label className="block text-sm font-medium mb-2">
-              Phone <span className="text-red-500">*</span>
-            </label>
-            <input
-              name="phone"
-              value={form.phone}
-              onChange={handleChange}
-              className="w-full px-4 py-2 rounded-lg border bg-gray-50"
-            />
-            {errors.phone && (
-              <p className="text-red-500 text-sm">{errors.phone}</p>
-            )}
-          </div>
-
+          <Input label="Phone" name="phone" value={form.phone} onChange={handleChange} error={errors.phone} />
           {/* GENDER */}
-          <div>
-            <label className="block text-sm font-medium mb-2">
-              Gender <span className="text-red-500">*</span>
-            </label>
-            <select
-              name="gender"
-              value={form.gender}
-              onChange={handleChange}
-              className="w-full px-4 py-2 rounded-lg border bg-gray-50"
-            >
-              <option value="">Select Gender</option>
-              <option value="Male">Male</option>
-              <option value="Female">Female</option>
-              <option value="Other">Other</option>
-            </select>
-            {errors.gender && (
-              <p className="text-red-500 text-sm">{errors.gender}</p>
-            )}
-          </div>
-
+          <Select label="Gender" name="gender" value={form.gender} onChange={handleChange} options={["Male", "Female", "Other"]} error={errors.gender} />
           {/* DOB */}
-          <div>
-            <label className="block text-sm font-medium mb-2">Date of Birth</label>
-            <input
-              type="date"
-              name="dob"
-              value={form.dob}
-              onChange={handleChange}
-              className="w-full px-4 py-2 rounded-lg border bg-gray-50"
-            />
-          </div>
-
+          <Input label="Date of Birth" name="dob" type="date" value={form.dob} onChange={handleChange} />
           {/* ROLE */}
-          <div>
-            <label className="block text-sm font-medium mb-2">Role</label>
-            <select
-              name="role"
-              value={form.role}
-              onChange={handleChange}
-              className="w-full px-4 py-2 rounded-lg border bg-gray-50"
-            >
-              <option value="user">User</option>
-              <option value="admin">Admin</option>
-            </select>
-          </div>
+          <Select label="Role" name="role" value={form.role} onChange={handleChange} options={["user","admin"]} />
 
           {/* PROFILE IMAGE */}
           <div className="md:col-span-2">
@@ -243,12 +160,12 @@ const AddUser = () => {
           >
             Cancel
           </button>
-
           <button
             onClick={() => setOpenSaveModal(true)}
             disabled={submitting}
-            className="px-5 py-2 rounded-lg bg-blue-600 text-white"
+            className="px-5 py-2 rounded-lg bg-blue-600 text-white flex items-center gap-2"
           >
+            <Save size={18} />
             Save User
           </button>
         </div>
@@ -267,5 +184,39 @@ const AddUser = () => {
     </div>
   );
 };
+
+/* ================= INPUT COMPONENT ================= */
+const Input = ({ label, name, value, onChange, type="text", error }) => (
+  <div>
+    <label className="block text-sm font-medium mb-2">{label}</label>
+    <input
+      type={type}
+      name={name}
+      value={value}
+      onChange={onChange}
+      className="w-full px-4 py-2 rounded-lg border bg-gray-50"
+    />
+    {error && <p className="text-red-500 text-sm">{error}</p>}
+  </div>
+);
+
+/* ================= SELECT COMPONENT ================= */
+const Select = ({ label, name, value, onChange, options, error }) => (
+  <div>
+    <label className="block text-sm font-medium mb-2">{label}</label>
+    <select
+      name={name}
+      value={value}
+      onChange={onChange}
+      className="w-full px-4 py-2 rounded-lg border bg-gray-50"
+    >
+      <option value="">Select {label}</option>
+      {options.map((opt, i) => (
+        <option key={i} value={opt}>{opt}</option>
+      ))}
+    </select>
+    {error && <p className="text-red-500 text-sm">{error}</p>}
+  </div>
+);
 
 export default AddUser;

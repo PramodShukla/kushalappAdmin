@@ -45,8 +45,13 @@ const EditUser = () => {
           role: data.role || "user",
         });
 
+        // Handle profile image URL
         if (data.profilePic) {
-          setProfilePreview(`${BASE_URL}${data.profilePic}`);
+          setProfilePreview(
+            data.profilePic.startsWith("http")
+              ? data.profilePic
+              : `${BASE_URL}${data.profilePic}`
+          );
         }
       } catch (err) {
         console.error(err);
@@ -122,6 +127,11 @@ const EditUser = () => {
 
       toast.success("User updated successfully");
       setOpenSaveModal(false);
+
+      // Update preview with BASE_URL in case server returns relative path
+      if (profileFile) {
+        setProfilePreview(URL.createObjectURL(profileFile));
+      }
 
       setTimeout(() => navigate("/users"), 800);
     } catch (error) {

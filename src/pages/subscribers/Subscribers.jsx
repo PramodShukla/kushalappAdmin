@@ -1,8 +1,6 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import { Search, Plus, Eye, Edit, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import toast from "react-hot-toast"; 
-import { getCategories, deleteCategory } from "../../services/categoryApi";
 import ConfirmModal from "../../components/common/ConfirmModal";
 
 /* ---------------- Status Badge ---------------- */
@@ -11,60 +9,48 @@ const statusStyle = (s) =>
     ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
     : "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300";
 
-/* ---------------- Skeleton Row ---------------- */
-const SkeletonRow = () => (
-  <tr>
-    {[...Array(6)].map((_, i) => (
-      <td key={i} className="p-4">
-        <div className="h-4 rounded bg-gray-200 dark:bg-slate-700 animate-pulse" />
-      </td>
-    ))}
-  </tr>
-);
+/* ---------------- Dummy Data ---------------- */
+const dummySubscribers = [
+  {
+    id: "1",
+    sequence: 1,
+    name: "Rahul Sharma",
+    email: "rahul@gmail.com",
+    plan: "Premium",
+    expiry: "12 Mar 2026",
+    status: "Active",
+    avatar: "https://randomuser.me/api/portraits/men/1.jpg",
+  },
+  {
+    id: "2",
+    sequence: 2,
+    name: "Priya Verma",
+    email: "priya@gmail.com",
+    plan: "Basic",
+    expiry: "05 Jan 2026",
+    status: "Inactive",
+    avatar: "https://randomuser.me/api/portraits/women/2.jpg",
+  },
+  {
+    id: "3",
+    sequence: 3,
+    name: "Amit Patel",
+    email: "amit@gmail.com",
+    plan: "Gold",
+    expiry: "22 Feb 2026",
+    status: "Active",
+    avatar: "https://randomuser.me/api/portraits/men/3.jpg",
+  },
+];
 
-const Categories = () => {
+const Subscribers = () => {
   const navigate = useNavigate();
 
-  const [loading, setLoading] = useState(true);
-  const [data, setData] = useState([]);
   const [search, setSearch] = useState("");
-
   const [openDelete, setOpenDelete] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
 
-  /* ================= FETCH ================= */
-  const fetchCategories = async () => {
-    try {
-      setLoading(true);
-
-      const res = await getCategories();
-      const list = Array.isArray(res?.data) ? res.data : [];
-
-      const formatted = list.map((item) => ({
-        id: item._id || item.id,
-        sequence: item.sequence ?? "-",
-        name: item.name || "-",
-        description: item.description || "",
-        providers: item.providerCount ?? 0,
-        subcategory: item.subCategoryCount ?? 0,
-        status: item.status || "Active",
-        image: item.icon || "https://via.placeholder.com/80",
-        banner: item.banner || "",
-        createdAt: item.createdAt || null,
-      }));
-
-      setData(formatted);
-    } catch (err) {
-      console.error("Fetch categories error:", err);
-      toast.error("Failed to load categories");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchCategories();
-  }, []);
+  const [data, setData] = useState(dummySubscribers);
 
   /* ================= DELETE ================= */
   const handleDeleteClick = (id) => {
@@ -72,26 +58,16 @@ const Categories = () => {
     setOpenDelete(true);
   };
 
-  const confirmDelete = async () => {
-    try {
-      await deleteCategory(deleteId);
-      setOpenDelete(false);
-      setDeleteId(null);
-
-      toast.success("Category deleted successfully", { icon: "🗑️" });
-      fetchCategories();
-    } catch (err) {
-      console.error("Delete failed:", err);
-      toast.error(
-        err?.response?.data?.message || "Failed to delete category"
-      );
-    }
+  const confirmDelete = () => {
+    setData((prev) => prev.filter((item) => item.id !== deleteId));
+    setOpenDelete(false);
+    setDeleteId(null);
   };
 
   /* ================= FILTER ================= */
   const filtered = useMemo(() => {
     return data.filter((u) =>
-      (u.name || "").toLowerCase().includes(search.toLowerCase())
+      u.name.toLowerCase().includes(search.toLowerCase())
     );
   }, [search, data]);
 
@@ -100,13 +76,13 @@ const Categories = () => {
     <div className="space-y-6">
       {/* HEADER */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold dark:text-white">Categories</h1>
+        <h1 className="text-2xl font-bold dark:text-white">Subscribers</h1>
 
         <button
-          onClick={() => navigate("/add-category")}
+          onClick={() => navigate("/add-subscribers")}
           className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
         >
-          <Plus size={16} /> Add Category
+          <Plus size={16} /> Add Subscriber
         </button>
       </div>
 
@@ -116,7 +92,7 @@ const Categories = () => {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
             type="text"
-            placeholder="Search..."
+            placeholder="Search subscribers..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-10 pr-4 py-2 rounded-lg bg-gray-50 dark:bg-slate-800"
@@ -131,57 +107,45 @@ const Categories = () => {
             <thead className="bg-gray-50 dark:bg-slate-800 text-left text-sm">
               <tr>
                 <th className="p-4">Sequence</th>
-                <th className="p-4">Title</th>
-                <th className="p-4">Providers</th>
-                <th className="p-4">SubCategory</th>
+                <th className="p-4">Avatar</th>
+                <th className="p-4">Name</th>
+                <th className="p-4">Email</th>
+                <th className="p-4">Plan</th>
+                <th className="p-4">Expiry</th>
                 <th className="p-4">Status</th>
                 <th className="p-4 text-center">Actions</th>
               </tr>
             </thead>
 
             <tbody>
-              {loading && [...Array(5)].map((_, i) => <SkeletonRow key={i} />)}
-
-              {!loading && filtered.map((u) => (
+              {filtered.map((u) => (
                 <tr
                   key={u.id}
                   className="hover:bg-gray-50 dark:hover:bg-slate-800"
                 >
                   <td className="p-4">{u.sequence}</td>
 
-                  <td className="p-4 flex items-center gap-3">
+                  {/* Avatar */}
+                  <td className="p-4">
                     <img
-                      src={u.image}
+                      src={u.avatar}
                       alt={u.name}
-                      className="w-10 h-10 rounded-lg object-cover bg-amber-100 p-2"
-                      onError={(e) => {
-                        e.target.src = "https://via.placeholder.com/80";
-                      }}
+                      className="w-10 h-10 rounded-full object-cover"
                     />
-                    {u.name}
                   </td>
 
-                  <td
-                    className="p-4 text-blue-600 cursor-pointer hover:underline"
-                    onClick={() =>
-                      navigate(`/providers?category=${u.id}&name=${encodeURIComponent(u.name)}`)
-                    }
-                  >
-                    {u.providers}
+                  <td className="p-4 font-medium">{u.name}</td>
+                  <td className="p-4 text-gray-600 dark:text-gray-300">
+                    {u.email}
                   </td>
-
-                  <td
-                    className="p-4 text-blue-600 cursor-pointer hover:underline"
-                    onClick={() =>
-                      navigate(`/subcategories?category=${u.id}&name=${encodeURIComponent(u.name)}`)
-                    }
-                  >
-                    {u.subcategory}
-                  </td>
+                  <td className="p-4 text-blue-600">{u.plan}</td>
+                  <td className="p-4">{u.expiry}</td>
 
                   <td className="p-4">
                     <span
-                      className={`px-3 py-1 text-xs rounded-full ${statusStyle(u.status)}`}
+                      className={`px-3 py-1 text-xs rounded-full ${statusStyle(
+                        u.status
+                      )}`}
                     >
                       {u.status}
                     </span>
@@ -190,14 +154,18 @@ const Categories = () => {
                   <td className="p-4">
                     <div className="flex justify-center gap-2">
                       <button
-                        onClick={() => navigate(`/category-details/${u.id}`)}
+                        onClick={() =>
+                          navigate(`/subscribers-details/${u.id}`)
+                        }
                         className="w-8 h-8 rounded-full bg-blue-100 hover:bg-blue-200 flex items-center justify-center"
                       >
                         <Eye size={16} className="text-blue-600" />
                       </button>
 
                       <button
-                        onClick={() => navigate(`/edit-category/${u.id}`)}
+                        onClick={() =>
+                          navigate(`/edit-subscribers/${u.id}`)
+                        }
                         className="w-8 h-8 rounded-full bg-yellow-100 hover:bg-yellow-200 flex items-center justify-center"
                       >
                         <Edit size={16} className="text-yellow-600" />
@@ -214,10 +182,10 @@ const Categories = () => {
                 </tr>
               ))}
 
-              {!loading && filtered.length === 0 && (
+              {filtered.length === 0 && (
                 <tr>
-                  <td colSpan="6" className="p-6 text-center text-gray-500">
-                    No categories found
+                  <td colSpan="8" className="p-6 text-center text-gray-500">
+                    No subscribers found
                   </td>
                 </tr>
               )}
@@ -231,7 +199,7 @@ const Categories = () => {
         open={openDelete}
         onClose={() => setOpenDelete(false)}
         onConfirm={confirmDelete}
-        title="Delete Category"
+        title="Delete Subscriber"
         message="This cannot be undone"
         type="danger"
         icon={<Trash2 className="w-10 h-10 text-red-500" />}
@@ -240,4 +208,4 @@ const Categories = () => {
   );
 };
 
-export default Categories;
+export default Subscribers;

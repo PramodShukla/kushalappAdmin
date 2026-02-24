@@ -48,13 +48,21 @@ const EditSubCategory = () => {
       setDescription(data.description || "");
       setSequence(data.sequence || "");
 
-      if (data.banner) {
-        setBannerPreview(`${BASE_URL}${data.banner}`);
-      }
+      // Handle image URLs
+      const bannerUrl = data.banner
+        ? data.banner.startsWith("http")
+          ? data.banner
+          : `${BASE_URL}${data.banner}`
+        : null;
 
-      if (data.icon) {
-        setIconPreview(`${BASE_URL}${data.icon}`);
-      }
+      const iconUrl = data.icon
+        ? data.icon.startsWith("http")
+          ? data.icon
+          : `${BASE_URL}${data.icon}`
+        : null;
+
+      setBannerPreview(bannerUrl);
+      setIconPreview(iconUrl);
     } catch (error) {
       toast.error("Failed to load subcategory");
     } finally {
@@ -66,20 +74,17 @@ const EditSubCategory = () => {
     fetchDetails();
   }, [id]);
 
-  /* ================= IMAGE ================= */
+  /* ================= IMAGE HANDLER ================= */
   const validateImage = (file) => {
     if (!file) return false;
-
     if (!["image/png", "image/jpeg", "image/jpg"].includes(file.type)) {
       toast.error("Only PNG/JPG allowed");
       return false;
     }
-
     if (file.size > 2 * 1024 * 1024) {
       toast.error("Max size 2MB");
       return false;
     }
-
     return true;
   };
 
@@ -189,12 +194,9 @@ const EditSubCategory = () => {
       {/* FORM */}
       <div className="bg-white border rounded-2xl shadow-sm p-6">
         <div className="grid md:grid-cols-2 gap-6">
-
           {/* Name */}
           <div>
-            <label className="text-sm font-medium mb-2 block">
-              Name *
-            </label>
+            <label className="text-sm font-medium mb-2 block">Name *</label>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -204,9 +206,7 @@ const EditSubCategory = () => {
 
           {/* Sequence */}
           <div>
-            <label className="text-sm font-medium mb-2 block">
-              Sequence *
-            </label>
+            <label className="text-sm font-medium mb-2 block">Sequence *</label>
             <input
               type="number"
               value={sequence}
@@ -217,9 +217,7 @@ const EditSubCategory = () => {
 
           {/* Intro */}
           <div className="md:col-span-2">
-            <label className="text-sm font-medium mb-2 block">
-              Intro *
-            </label>
+            <label className="text-sm font-medium mb-2 block">Intro *</label>
             <input
               value={intro}
               onChange={(e) => setIntro(e.target.value)}
@@ -229,9 +227,7 @@ const EditSubCategory = () => {
 
           {/* Description */}
           <div className="md:col-span-2">
-            <label className="text-sm font-medium mb-2 block">
-              Description
-            </label>
+            <label className="text-sm font-medium mb-2 block">Description</label>
             <textarea
               rows={4}
               value={description}
@@ -242,15 +238,11 @@ const EditSubCategory = () => {
 
           {/* Banner */}
           <div>
-            <label className="text-sm font-medium mb-2 block">
-              Banner
-            </label>
+            <label className="text-sm font-medium mb-2 block">Banner</label>
             <label className="flex items-center gap-3 px-4 py-3 rounded-lg border-2 border-dashed cursor-pointer">
-              <Upload size={18} />
-              Upload banner
+              <Upload size={18} /> Upload banner
               <input hidden type="file" onChange={handleBanner} />
             </label>
-
             {bannerPreview && (
               <img
                 src={bannerPreview}
@@ -261,15 +253,11 @@ const EditSubCategory = () => {
 
           {/* Icon */}
           <div>
-            <label className="text-sm font-medium mb-2 block">
-              Icon
-            </label>
+            <label className="text-sm font-medium mb-2 block">Icon</label>
             <label className="flex items-center gap-3 px-4 py-3 rounded-lg border-2 border-dashed cursor-pointer">
-              <Upload size={18} />
-              Upload icon
+              <Upload size={18} /> Upload icon
               <input hidden type="file" onChange={handleIcon} />
             </label>
-
             {iconPreview && (
               <img
                 src={iconPreview}

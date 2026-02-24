@@ -12,7 +12,7 @@ const statusStyle = (s) =>
 
 const SkeletonRow = () => (
   <tr>
-    {[...Array(8)].map((_, i) => (
+    {[...Array(9)].map((_, i) => (
       <td key={i} className="p-4">
         <div className="h-4 rounded bg-gray-200 dark:bg-slate-700 animate-pulse" />
       </td>
@@ -49,7 +49,7 @@ const Offers = () => {
         offerType: item.offerType || "-",
         offerMode: item.offerMode || "-",
         image: item.offerImage
-          ? `https://api.kushalapp.com${item.offerImage}`
+          ? item.offerImage
           : "/images/offers/default.png",
       }));
       setData(formatted);
@@ -150,6 +150,7 @@ const Offers = () => {
                 <th className="p-4">Offer Display Type</th>
                 <th className="p-4">Offer Type</th>
                 <th className="p-4">Offer Mode</th>
+                 <th className="p-4">Data</th>
                 <th className="p-4">Actions</th>
               </tr>
             </thead>
@@ -184,6 +185,14 @@ const Offers = () => {
                     <td className="p-4">{u.offerDisplayType}</td>
                     <td className="p-4">{u.offerType}</td>
                     <td className="p-4">{u.offerMode}</td>
+                    <td className="p-4">
+                      <button
+                        onClick={() => navigate(`/offers-data`)}
+                        className="px-3 py-1.5 text-sm rounded-full border border-blue-500 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900 transition"
+                      >
+                        View Data
+                      </button>
+                    </td>
                     <td className="p-4 flex gap-2">
                       <button
                         onClick={() => navigate(`/offer-details/${u.id}`)}
@@ -214,7 +223,7 @@ const Offers = () => {
 
               {!loading && filteredOffers.length === 0 && (
                 <tr>
-                  <td colSpan="8" className="p-6 text-center text-gray-500">
+                  <td colSpan="9" className="p-6 text-center text-gray-500">
                     No offers found
                   </td>
                 </tr>

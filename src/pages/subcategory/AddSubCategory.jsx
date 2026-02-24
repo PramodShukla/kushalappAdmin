@@ -6,6 +6,8 @@ import ConfirmModal from "../../components/common/ConfirmModal";
 import { createSubCategory } from "../../services/subcategoryapi";
 import { getCategories } from "../../services/categoryApi";
 
+const BASE_URL = "https://api.kushalapp.com";
+
 const AddSubCategory = () => {
   const navigate = useNavigate();
 
@@ -47,38 +49,51 @@ const AddSubCategory = () => {
   // -------- IMAGE VALIDATION --------
   const validateImage = (file) => {
     if (!file) return false;
-
     if (!["image/png", "image/jpeg", "image/jpg"].includes(file.type)) {
       toast.error("Only PNG, JPG or JPEG allowed");
       return false;
     }
-
     if (file.size > 2 * 1024 * 1024) {
       toast.error("Image size must be less than 2MB");
       return false;
     }
-
     return true;
   };
 
-  const handleBanner = (e) => {
-    const file = e.target.files[0];
-    if (!validateImage(file)) return;
-    setBannerFile(file);
-    setBannerPreview(URL.createObjectURL(file));
+  // -------- IMAGE HANDLERS --------
+  const handleBanner = (fileOrPath) => {
+    if (!fileOrPath) return;
+
+    if (fileOrPath instanceof File) {
+      if (!validateImage(fileOrPath)) return;
+      setBannerFile(fileOrPath);
+      setBannerPreview(URL.createObjectURL(fileOrPath));
+    } else if (typeof fileOrPath === "string") {
+      const url = fileOrPath.startsWith("http")
+        ? fileOrPath
+        : `${BASE_URL}${fileOrPath}`;
+      setBannerPreview(url);
+    }
   };
 
-  const handleIcon = (e) => {
-    const file = e.target.files[0];
-    if (!validateImage(file)) return;
-    setIconFile(file);
-    setIconPreview(URL.createObjectURL(file));
+  const handleIcon = (fileOrPath) => {
+    if (!fileOrPath) return;
+
+    if (fileOrPath instanceof File) {
+      if (!validateImage(fileOrPath)) return;
+      setIconFile(fileOrPath);
+      setIconPreview(URL.createObjectURL(fileOrPath));
+    } else if (typeof fileOrPath === "string") {
+      const url = fileOrPath.startsWith("http")
+        ? fileOrPath
+        : `${BASE_URL}${fileOrPath}`;
+      setIconPreview(url);
+    }
   };
 
   // -------- VALIDATION --------
   const validate = () => {
     let err = {};
-
     if (!category) err.category = "Category is required";
     if (!name) err.name = "Name is required";
     if (!intro) err.intro = "Intro is required";
@@ -115,20 +130,14 @@ const AddSubCategory = () => {
       });
 
       setOpenSaveModal(false);
-
       toast.success("SubCategory added successfully");
 
-      setTimeout(() => {
-        navigate("/sub-categories");
-      }, 800);
+      setTimeout(() => navigate("/sub-categories"), 800);
     } catch (error) {
       setOpenSaveModal(false);
-
       console.error("Create error:", error.response);
-
       toast.error(
-        error?.response?.data?.message ||
-        "Failed to create SubCategory"
+        error?.response?.data?.message || "Failed to create SubCategory"
       );
     } finally {
       setSubmitting(false);
@@ -140,15 +149,12 @@ const AddSubCategory = () => {
       {/* HEADER */}
       <div>
         <h1 className="text-2xl font-bold">Add SubCategory</h1>
-        <p className="text-sm text-gray-500">
-          Create a new subcategory
-        </p>
+        <p className="text-sm text-gray-500">Create a new subcategory</p>
       </div>
 
-      {/* CARD */}
+      {/* FORM CARD */}
       <div className="bg-white border rounded-2xl shadow-sm p-6">
         <div className="grid md:grid-cols-2 gap-6">
-
           {/* CATEGORY */}
           <div>
             <label className="block text-sm font-medium mb-2">
@@ -250,42 +256,42 @@ const AddSubCategory = () => {
 
           {/* BANNER */}
           <div>
-            <label className="block text-sm font-medium mb-2">
-              Banner Image
-            </label>
+            <label className="block text-sm font-medium mb-2">Banner</label>
             <label className="flex items-center gap-3 px-4 py-3 rounded-lg border-2 border-dashed cursor-pointer">
               <Upload size={18} /> Upload banner
-              <input hidden type="file" onChange={handleBanner} />
+              <input hidden type="file" onChange={(e) => handleBanner(e.target.files[0])} />
             </label>
-            {bannerPreview && (
+            {bannerPreview ? (
               <img
                 src={bannerPreview}
                 className="mt-3 w-40 h-24 rounded-lg object-cover"
                 alt="banner"
               />
+            ) : (
+              <p className="text-gray-400 text-sm mt-2">No banner uploaded</p>
             )}
           </div>
 
           {/* ICON */}
           <div>
-            <label className="block text-sm font-medium mb-2">
-              Icon Image
-            </label>
+            <label className="block text-sm font-medium mb-2">Icon</label>
             <label className="flex items-center gap-3 px-4 py-3 rounded-lg border-2 border-dashed cursor-pointer">
               <Upload size={18} /> Upload icon
-              <input hidden type="file" onChange={handleIcon} />
+              <input hidden type="file" onChange={(e) => handleIcon(e.target.files[0])} />
             </label>
-            {iconPreview && (
+            {iconPreview ? (
               <img
                 src={iconPreview}
                 className="mt-3 w-20 h-20 rounded-lg object-cover"
                 alt="icon"
               />
+            ) : (
+              <p className="text-gray-400 text-sm mt-2">No icon uploaded</p>
             )}
           </div>
         </div>
 
-        {/* ACTIONS */}
+        {/* ACTION BUTTONS */}
         <div className="flex justify-end gap-3 mt-8">
           <button
             onClick={() => navigate("/sub-categories")}

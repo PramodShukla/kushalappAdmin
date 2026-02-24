@@ -4,8 +4,6 @@ import { ArrowLeft, Edit } from "lucide-react";
 import toast from "react-hot-toast";
 import { getCategory } from "../../services/categoryApi";
 
-const BASE_URL = "https://api.kushalapp.com"; // Change if needed
-
 const CategoryDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -34,9 +32,9 @@ const CategoryDetail = () => {
   }, [id]);
 
   // ---------------- HELPER: FULL IMAGE URL ----------------
-  const getImageUrl = (path) => {
-    if (!path) return null;
-    return path.startsWith("http") ? path : `${BASE_URL}${path}`;
+  const getImageUrl = (url) => {
+    // Simply return URL if it exists, else null
+    return url || null;
   };
 
   // ---------------- SKELETON ----------------
@@ -124,7 +122,7 @@ const CategoryDetail = () => {
               <div className="col-span-2">
                 <span
                   className={`px-3 py-1 rounded-full text-sm font-medium ${
-                    category.status === "Active"
+                    (category.status || "Active").toLowerCase() === "active"
                       ? "bg-green-100 text-green-700"
                       : "bg-red-100 text-red-700"
                   }`}

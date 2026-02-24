@@ -45,10 +45,39 @@ import Offers from "./pages/offers/Offers";
 import AddOffers from "./pages/offers/AddOffers";
 import EditOffers from "./pages/offers/EditOffers";
 import OfferDetail from "./pages/offers/OfferDetails";
+import OffersData from "./pages/offers/OffersData";
+import AddOffersData from "./pages/offers/AddOffersData";
+import EditOffersData from "./pages/offers/EditOffersData";
 
 /* Slider */
 import Slider from "./pages/slider/Slider";
 import AddSlider from "./pages/slider/AddSlider";
+
+/* Subscribers */
+import Subscribers from "./pages/subscribers/Subscribers";
+import AddSubscribers from "./pages/subscribers/AddSubscribers";
+import EditSubscribers from "./pages/subscribers/EditSubscribers";
+import SubscribersDetail from "./pages/subscribers/SubscribersDetails";
+
+
+/* Subscriptions */
+import Subscriptions from "./pages/subscriptions/Subscriptions";
+import AddSubscriptions from "./pages/subscriptions/AddSubscriptions";
+import EditSubscriptions from "./pages/subscriptions/EditSubscriptions";
+import SubscriptionsDetail from "./pages/subscriptions/SubscriptionsDetails";
+
+
+/* Notifications */
+import Notifications from "./pages/notifications/Notifications";
+import AddNotifications from "./pages/notifications/AddNotifications";
+import EditNotifications from "./pages/notifications/EditNotifications";
+import NotificationsDetail from "./pages/notifications/NotificationsDetails";
+
+/* Addons */
+import Addons from "./pages/addon/Addons";
+import AddAddons from "./pages/addon/AddAddons";
+import EditAddons from "./pages/addon/EditAddons";
+import AddonsDetail from "./pages/addon/AddonsDetails";
 
 export default function App() {
   return (
@@ -117,12 +146,61 @@ export default function App() {
           <Route path="/add-offer" element={<AddOffers />} />
           <Route path="/edit-offer/:id" element={<EditOffers />} />
           <Route path="/offer-details/:id" element={<OfferDetail />} />
+          <Route path="/offers-data" element={<OffersData />} />
+          <Route path="/add-offers-data" element={<AddOffersData />} />
+          <Route path="/edit-offers-data/:id" element={<EditOffersData />} />
 
           {/* Slider */}
           <Route path="/slider" element={<Slider />} />
           <Route path="/add-slider" element={<AddSlider />} />
+
+          {/* Subscribers */}
+          <Route path="/subscribers" element={<Subscribers />} />
+          <Route path="/add-subscribers" element={<AddSubscribers />} />
+          <Route path="/edit-subscribers/:id" element={<EditSubscribers />} />
+          <Route
+            path="/subscribers-details/:id"
+            element={<SubscribersDetail />}
+          />
+         
+       
+
+
+        {/* ================= SUBSCRIPTIONS ================= */}
+        <Route path="/subscriptions" element={<Subscriptions />} />
+        <Route path="/add-subscriptions" element={<AddSubscriptions />} />
+        <Route path="/edit-subscriptions/:id" element={<EditSubscriptions />} />
+        <Route
+          path="/subscriptions-details/:id"
+          element={<SubscriptionsDetail />}
+        />
+       
+
+
+        {/* ================= NOTIFICATIONS ================= */}
+        <Route path="/notifications" element={<Notifications />} />
+        <Route path="/add-notification" element={<AddNotifications />} />
+        <Route path="/edit-notification/:id" element={<EditNotifications />} />
+        <Route
+          path="/notifications-details/:id"
+          element={<NotificationsDetail />}
+        />
+       
+
+
+        {/* ================= ADDONS ================= */}
+        <Route path="/addons" element={<Addons />} />
+        <Route path="/add-addon" element={<AddAddons />} />
+        <Route path="/edit-addon/:id" element={<EditAddons />} />
+        <Route
+          path="/addons-details/:id"
+          element={<AddonsDetail />}
+        />
         </Route>
       </Routes>
+
+
+
     </>
   );
 }

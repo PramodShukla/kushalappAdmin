@@ -1,26 +1,20 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Search, Plus, Eye, Edit, Trash2 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import toast from "react-hot-toast";
 import ConfirmModal from "../../components/common/ConfirmModal";
-import {
-  getSubCategories,
-  deleteSubCategory,
-} from "../../services/subcategoryapi";
-import { getCategories } from "../../services/categoryApi"; // for category filter
+import { getSubCategories, deleteSubCategory } from "../../services/subcategoryapi";
+import { getCategories } from "../../services/categoryApi";
 
 const BASE_URL = "https://api.kushalapp.com";
 
-/* ---------- Safe Value Helper ---------- */
 const safe = (v) => (v === undefined || v === null || v === "" ? "-" : v);
 
-/* ---------------- Status Badge ---------------- */
 const statusStyle = (active) =>
   active
     ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
     : "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300";
 
-/* ---------------- Skeleton Row ---------------- */
 const SkeletonRow = () => (
   <tr>
     {[...Array(6)].map((_, i) => (
@@ -33,17 +27,19 @@ const SkeletonRow = () => (
 
 const SubCategories = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const queryParams = new URLSearchParams(location.search);
+  const categoryFromQuery = queryParams.get("category") || "";
 
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [search, setSearch] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState(""); // new filter
+  const [categoryFilter, setCategoryFilter] = useState(categoryFromQuery);
 
-  const [categories, setCategories] = useState([]); // list of categories
-
-  // Delete modal state
   const [deleteId, setDeleteId] = useState(null);
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
 
@@ -52,7 +48,6 @@ const SubCategories = () => {
     try {
       setLoading(true);
       const res = await getSubCategories();
-
       const list = Array.isArray(res?.data?.data)
         ? res.data.data
         : Array.isArray(res?.data)
@@ -66,7 +61,7 @@ const SubCategories = () => {
         description: safe(item.description),
         categoryId: item.category?._id || "",
         categoryName: safe(item.category?.name),
-        providers: item.providerCount === 0 ? 0 : safe(item.providerCount),
+        providers: item.providerCount ?? 0,
         status: item.isActive ?? true,
         createdAt: item.createdAt || null,
         image: item.banner
@@ -139,13 +134,11 @@ const SubCategories = () => {
 
       const categoryMatch = categoryFilter ? u.categoryId === categoryFilter : true;
 
-      if (!u.createdAt) return textMatch && categoryMatch;
+      const created = u.createdAt ? new Date(u.createdAt) : null;
+      const fromOk = fromDate && created ? created >= new Date(fromDate) : true;
+      const toOk = toDate && created ? created <= new Date(toDate) : true;
 
-      const created = new Date(u.createdAt);
-      const fromOk = fromDate ? created >= new Date(fromDate) : true;
-      const toOk = toDate ? created <= new Date(toDate) : true;
-
-      return textMatch && fromOk && toOk && categoryMatch;
+      return textMatch && categoryMatch && fromOk && toOk;
     });
   }, [search, fromDate, toDate, data, categoryFilter]);
 
@@ -154,7 +147,6 @@ const SubCategories = () => {
       {/* HEADER */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold dark:text-white">SubCategories</h1>
-
         <button
           onClick={() => navigate("/add-subcategory")}
           className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white"
@@ -207,7 +199,7 @@ const SubCategories = () => {
       </div>
 
       {/* TABLE */}
-      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm overflow-x-auto">
         <table className="w-full">
           <thead className="bg-gray-50 dark:bg-slate-800 text-left text-sm">
             <tr>
@@ -219,59 +211,39 @@ const SubCategories = () => {
               <th className="p-4">Actions</th>
             </tr>
           </thead>
-
           <tbody>
             {loading && [...Array(5)].map((_, i) => <SkeletonRow key={i} />)}
 
             {!loading &&
               filteredData.map((u) => (
-                <tr
-                  key={u.id}
-                  className="hover:bg-gray-50 dark:hover:bg-slate-800"
-                >
+                <tr key={u.id} className="hover:bg-gray-50 dark:hover:bg-slate-800">
                   <td className="p-4">{u.sequence}</td>
 
                   <td className="p-4 flex items-center gap-3">
-                    <img
-                      src={u.image}
-                      alt=""
-                      className="w-10 h-10 rounded-lg object-cover"
-                    />
+                    <img src={u.image} alt="" className="w-10 h-10 rounded-lg object-cover" />
                     {u.name}
                   </td>
 
                   <td className="p-4">{u.categoryName}</td>
 
-                  <td
-                    className="p-4 text-blue-600 "
-                  >
-                    {u.providers}
-                  </td>
+                  <td className="p-4 text-blue-600">{u.providers}</td>
 
                   <td className="p-4">
-                    <span
-                      className={`px-3 py-1 text-xs rounded-full ${statusStyle(
-                        u.status
-                      )}`}
-                    >
+                    <span className={`px-3 py-1 text-xs rounded-full ${statusStyle(u.status)}`}>
                       {u.status ? "Active" : "Inactive"}
                     </span>
                   </td>
 
                   <td className="p-4 flex gap-3">
                     <button
-                      onClick={() =>
-                        navigate(`/subcategory-details/${u.id}`)
-                      }
+                      onClick={() => navigate(`/subcategory-details/${u.id}`)}
                       className="w-8 h-8 rounded-full bg-blue-100 hover:bg-blue-200 flex items-center justify-center"
                     >
                       <Eye size={16} className="text-blue-600" />
                     </button>
 
                     <button
-                      onClick={() =>
-                        navigate(`/edit-subcategory/${u.id}`)
-                      }
+                      onClick={() => navigate(`/edit-subcategory/${u.id}`)}
                       className="w-8 h-8 rounded-full bg-yellow-100 hover:bg-yellow-200 flex items-center justify-center"
                     >
                       <Edit size={16} className="text-yellow-600" />

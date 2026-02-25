@@ -173,7 +173,7 @@ const Categories = () => {
                   <td
                     className="p-4 text-blue-600 cursor-pointer hover:underline"
                     onClick={() =>
-                      navigate(`/subcategories?category=${u.id}&name=${encodeURIComponent(u.name)}`)
+                      navigate(`/sub-categories?category=${u.id}&name=${encodeURIComponent(u.name)}`)
                     }
                   >
                     {u.subcategory}

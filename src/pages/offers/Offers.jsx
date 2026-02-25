@@ -5,6 +5,8 @@ import toast from "react-hot-toast";
 import { getOffers, deleteOffer } from "../../services/offersapi";
 import ConfirmModal from "../../components/common/ConfirmModal";
 
+const BASE_URL = "https://api.kushalapp.com";
+
 const statusStyle = (s) =>
   s === "Active"
     ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
@@ -49,7 +51,7 @@ const Offers = () => {
         offerType: item.offerType || "-",
         offerMode: item.offerMode || "-",
         image: item.offerImage
-          ? item.offerImage
+          ? `${BASE_URL}${item.offerImage}`
           : "/images/offers/default.png",
       }));
       setData(formatted);
@@ -68,7 +70,6 @@ const Offers = () => {
   // ---------------- Delete Offer ----------------
   const confirmDelete = async () => {
     if (!deleteId) return;
-
     try {
       await deleteOffer(deleteId);
       toast.success("Offer deleted successfully");
@@ -103,7 +104,7 @@ const Offers = () => {
         <h1 className="text-2xl font-bold dark:text-white">Offers</h1>
         <button
           onClick={() => navigate("/add-offer")}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white"
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition"
         >
           <Plus size={16} /> Add Offer
         </button>
@@ -145,12 +146,11 @@ const Offers = () => {
               <tr>
                 <th className="p-4">Sequence</th>
                 <th className="p-4">Title</th>
-                <th className="p-4">Discount</th>
                 <th className="p-4">Status</th>
-                <th className="p-4">Offer Display Type</th>
+                <th className="p-4"> Display Type</th>
                 <th className="p-4">Offer Type</th>
                 <th className="p-4">Offer Mode</th>
-                 <th className="p-4">Data</th>
+                <th className="p-4">Data</th>
                 <th className="p-4">Actions</th>
               </tr>
             </thead>
@@ -164,20 +164,10 @@ const Offers = () => {
                     className="hover:bg-gray-50 dark:hover:bg-slate-800"
                   >
                     <td className="p-4">{u.sequence}</td>
-                    <td className="p-4 flex items-center gap-3">
-                      <img
-                        src={u.image}
-                        alt=""
-                        className="w-10 h-10 rounded-lg object-cover"
-                      />
-                      {u.title}
-                    </td>
-                    <td className="p-4">{u.discount}%</td>
+                    <td className="p-4 flex items-center gap-3">{u.title}</td>
                     <td className="p-4">
                       <span
-                        className={`px-3 py-1 text-xs rounded-full ${statusStyle(
-                          u.status
-                        )}`}
+                        className={`px-3 py-1 text-xs rounded-full ${statusStyle(u.status)}`}
                       >
                         {u.status}
                       </span>
@@ -187,7 +177,15 @@ const Offers = () => {
                     <td className="p-4">{u.offerMode}</td>
                     <td className="p-4">
                       <button
-                        onClick={() => navigate(`/offers-data`)}
+                        onClick={() => {
+                          navigate(`/offers-data/${u.id}`, {
+                            state: {
+                              offerId: u.id,
+                              offerTitle: u.title,
+                              offerType: u.offerType,
+                            },
+                          });
+                        }}
                         className="px-3 py-1.5 text-sm rounded-full border border-blue-500 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900 transition"
                       >
                         View Data
@@ -196,14 +194,14 @@ const Offers = () => {
                     <td className="p-4 flex gap-2">
                       <button
                         onClick={() => navigate(`/offer-details/${u.id}`)}
-                        className=" cursor-pointer w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 hover:bg-blue-200 flex items-center justify-center"
+                        className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 hover:bg-blue-200 flex items-center justify-center"
                       >
                         <Eye size={16} className="text-blue-600" />
                       </button>
 
                       <button
                         onClick={() => navigate(`/edit-offer/${u.id}`)}
-                        className=" cursor-pointer w-8 h-8 rounded-full bg-yellow-100 dark:bg-yellow-900 hover:bg-yellow-200 flex items-center justify-center"
+                        className="w-8 h-8 rounded-full bg-yellow-100 dark:bg-yellow-900 hover:bg-yellow-200 flex items-center justify-center"
                       >
                         <Edit size={16} className="text-yellow-600" />
                       </button>
@@ -213,7 +211,7 @@ const Offers = () => {
                           setDeleteId(u.id);
                           setOpenDeleteModal(true);
                         }}
-                        className=" cursor-pointer w-8 h-8 rounded-full bg-red-100 dark:bg-red-900 hover:bg-red-200 flex items-center justify-center"
+                        className="w-8 h-8 rounded-full bg-red-100 dark:bg-red-900 hover:bg-red-200 flex items-center justify-center"
                       >
                         <Trash2 size={16} className="text-red-600" />
                       </button>

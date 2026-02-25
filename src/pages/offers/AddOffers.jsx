@@ -17,6 +17,7 @@ const AddOffer = () => {
     offerMode: "",
     offerType: "",
     displayType: "Horizontal",
+    status: "Active", // ✅ Added
   });
 
   const [imagePreview, setImagePreview] = useState(null);
@@ -70,11 +71,10 @@ const AddOffer = () => {
   const validate = () => {
     let err = {};
     if (!form.title) err.title = "Title is required";
-    if (!form.intro) err.intro = "Intro is required";
-    if (!form.description) err.description = "Description is required";
     if (!form.sequence) err.sequence = "Sequence is required";
     if (!form.offerMode) err.offerMode = "Offer Mode is required";
     if (!form.offerType) err.offerType = "Offer Type is required";
+    if (!form.status) err.status = "Status is required";
 
     setErrors(err);
     return Object.keys(err).length === 0;
@@ -99,16 +99,15 @@ const AddOffer = () => {
       formData.append("offerMode", form.offerMode);
       formData.append("offerType", form.offerType);
       formData.append("offerDisplayType", form.displayType);
+      formData.append("status", form.status); // ✅ Added
 
       if (imageFile) formData.append("offerImage", imageFile);
 
       await createOffer(formData);
 
       setOpenSaveModal(false);
-
       toast.success("Your offer has been saved successfully");
 
-      // Redirect after a short delay
       setTimeout(() => {
         navigate("/offers");
       }, 1000);
@@ -149,6 +148,7 @@ const AddOffer = () => {
       {/* Card */}
       <div className="bg-white/80 dark:bg-slate-900/70 backdrop-blur-md border rounded-3xl shadow-xl p-6">
         <div className="grid md:grid-cols-2 gap-6">
+
           {/* Title */}
           <div>
             <label className="text-sm font-semibold">
@@ -177,35 +177,6 @@ const AddOffer = () => {
               className="w-full mt-2 px-4 py-3 rounded-xl bg-gray-50 dark:bg-slate-800 border"
             />
             {errors.sequence && <p className="text-red-500 text-sm">{errors.sequence}</p>}
-          </div>
-
-          {/* Intro */}
-          <div className="md:col-span-2">
-            <label className="text-sm font-semibold">
-              Intro <span className="text-red-500">*</span>
-            </label>
-            <input
-              name="intro"
-              value={form.intro}
-              onChange={handleChange}
-              className="w-full mt-2 px-4 py-3 rounded-xl bg-gray-50 dark:bg-slate-800 border"
-            />
-            {errors.intro && <p className="text-red-500 text-sm">{errors.intro}</p>}
-          </div>
-
-          {/* Description */}
-          <div className="md:col-span-2">
-            <label className="text-sm font-semibold">
-              Description <span className="text-red-500">*</span>
-            </label>
-            <textarea
-              rows={4}
-              name="description"
-              value={form.description}
-              onChange={handleChange}
-              className="w-full mt-2 px-4 py-3 rounded-xl bg-gray-50 dark:bg-slate-800 border"
-            />
-            {errors.description && <p className="text-red-500 text-sm">{errors.description}</p>}
           </div>
 
           {/* Offer Mode */}
@@ -258,6 +229,23 @@ const AddOffer = () => {
             </select>
           </div>
 
+          {/* Status */}
+          <div>
+            <label className="text-sm font-semibold">
+              Status <span className="text-red-500">*</span>
+            </label>
+            <select
+              name="status"
+              value={form.status}
+              onChange={handleChange}
+              className="w-full mt-2 px-4 py-3 rounded-xl bg-gray-50 dark:bg-slate-800 border"
+            >
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+            {errors.status && <p className="text-red-500 text-sm">{errors.status}</p>}
+          </div>
+
           {/* Image */}
           <div className="md:col-span-2">
             <label className="text-sm font-semibold">Offer Image</label>
@@ -265,6 +253,7 @@ const AddOffer = () => {
               <Upload size={18} /> Upload Image
               <input hidden type="file" onChange={handleImage} />
             </label>
+
             {imagePreview && (
               <img
                 src={imagePreview}
@@ -289,7 +278,11 @@ const AddOffer = () => {
             onClick={() => setOpenSaveModal(true)}
             className="px-6 py-3 rounded-xl bg-blue-600 text-white font-semibold shadow flex items-center gap-2"
           >
-            {submitting ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
+            {submitting ? (
+              <Loader2 className="animate-spin" size={18} />
+            ) : (
+              <Save size={18} />
+            )}
             Save Offer
           </button>
         </div>

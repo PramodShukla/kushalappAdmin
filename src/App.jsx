@@ -21,7 +21,6 @@ import AddUser from "./pages/users/AddUser";
 import EditUser from "./pages/users/EditUser";
 import UserDetails from "./pages/users/UserDetails";
 
-
 /* Category */
 import Categories from "./pages/category/Categories";
 import AddCategory from "./pages/category/AddCategory";
@@ -59,13 +58,11 @@ import AddSubscribers from "./pages/subscribers/AddSubscribers";
 import EditSubscribers from "./pages/subscribers/EditSubscribers";
 import SubscribersDetail from "./pages/subscribers/SubscribersDetails";
 
-
 /* Subscriptions */
 import Subscriptions from "./pages/subscriptions/Subscriptions";
 import AddSubscriptions from "./pages/subscriptions/AddSubscriptions";
 import EditSubscriptions from "./pages/subscriptions/EditSubscriptions";
 import SubscriptionsDetail from "./pages/subscriptions/SubscriptionsDetails";
-
 
 /* Notifications */
 import Notifications from "./pages/notifications/Notifications";
@@ -136,17 +133,14 @@ export default function App() {
           <Route path="/providers" element={<ProvidersList />} />
           <Route path="/add-provider" element={<AddProvider />} />
           <Route path="/edit-provider/:id" element={<EditProvider />} />
-          <Route
-            path="/provider-details/:id"
-            element={<ProviderDetail />}
-          />
+          <Route path="/provider-details/:id" element={<ProviderDetail />} />
 
           {/* Offers */}
           <Route path="/offers" element={<Offers />} />
           <Route path="/add-offer" element={<AddOffers />} />
           <Route path="/edit-offer/:id" element={<EditOffers />} />
           <Route path="/offer-details/:id" element={<OfferDetail />} />
-          <Route path="/offers-data" element={<OffersData />} />
+          <Route path="/offers-data/:id" element={<OffersData />} />
           <Route path="/add-offers-data" element={<AddOffersData />} />
           <Route path="/edit-offers-data/:id" element={<EditOffersData />} />
 
@@ -162,45 +156,38 @@ export default function App() {
             path="/subscribers-details/:id"
             element={<SubscribersDetail />}
           />
-         
-       
 
+          {/* ================= SUBSCRIPTIONS ================= */}
+          <Route path="/subscriptions" element={<Subscriptions />} />
+          <Route path="/add-subscriptions" element={<AddSubscriptions />} />
+          <Route
+            path="/edit-subscriptions/:id"
+            element={<EditSubscriptions />}
+          />
+          <Route
+            path="/subscriptions-details/:id"
+            element={<SubscriptionsDetail />}
+          />
 
-        {/* ================= SUBSCRIPTIONS ================= */}
-        <Route path="/subscriptions" element={<Subscriptions />} />
-        <Route path="/add-subscriptions" element={<AddSubscriptions />} />
-        <Route path="/edit-subscriptions/:id" element={<EditSubscriptions />} />
-        <Route
-          path="/subscriptions-details/:id"
-          element={<SubscriptionsDetail />}
-        />
-       
+          {/* ================= NOTIFICATIONS ================= */}
+          <Route path="/notifications" element={<Notifications />} />
+          <Route path="/add-notification" element={<AddNotifications />} />
+          <Route
+            path="/edit-notification/:id"
+            element={<EditNotifications />}
+          />
+          <Route
+            path="/notifications-details/:id"
+            element={<NotificationsDetail />}
+          />
 
-
-        {/* ================= NOTIFICATIONS ================= */}
-        <Route path="/notifications" element={<Notifications />} />
-        <Route path="/add-notification" element={<AddNotifications />} />
-        <Route path="/edit-notification/:id" element={<EditNotifications />} />
-        <Route
-          path="/notifications-details/:id"
-          element={<NotificationsDetail />}
-        />
-       
-
-
-        {/* ================= ADDONS ================= */}
-        <Route path="/addons" element={<Addons />} />
-        <Route path="/add-addon" element={<AddAddons />} />
-        <Route path="/edit-addon/:id" element={<EditAddons />} />
-        <Route
-          path="/addons-details/:id"
-          element={<AddonsDetail />}
-        />
+          {/* ================= ADDONS ================= */}
+          <Route path="/addons" element={<Addons />} />
+          <Route path="/add-addon" element={<AddAddons />} />
+          <Route path="/edit-addon/:id" element={<EditAddons />} />
+          <Route path="/addons-details/:id" element={<AddonsDetail />} />
         </Route>
       </Routes>
-
-
-
     </>
   );
 }

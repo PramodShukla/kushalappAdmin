@@ -299,6 +299,6 @@ const ProviderDetail = () => {
       </div>
     </div>
   );
-};
+}; 
 
 export default ProviderDetail;
